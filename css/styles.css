@@ -30,7 +30,6 @@
       radial-gradient(circle at 84% 78%, rgba(28,36,22,0.045), transparent 36%);
     background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
     background-position: -15px 13px, -15px 13px, center, center;
-    background-attachment: fixed;
     color: var(--ink);
     min-height: 100vh;
     overflow-x: hidden;
@@ -210,8 +209,6 @@
     filter: saturate(0.85) brightness(0.97);
   }
   .project-thumb video { background: var(--bg-card); }
-  .project-thumb video:not(.is-ready) { opacity: 0; }
-  .project-thumb video.is-ready { opacity: 1; }
   .project-card:hover .project-thumb img,
   .project-card:hover .project-thumb video { transform: scale(1.05); filter: saturate(1) brightness(1); }
   .thumb-overlay {

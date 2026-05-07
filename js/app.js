@@ -403,13 +403,6 @@ function initCoverVideos() {
   videos.forEach(video => {
     video.muted = true;
     video.playsInline = true;
-
-    const markReady = () => video.classList.add('is-ready');
-    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      markReady();
-    } else {
-      video.addEventListener('loadeddata', markReady, { once: true });
-    }
   });
 
   const observer = new IntersectionObserver(entries => {
@@ -421,7 +414,7 @@ function initCoverVideos() {
         video.pause();
       }
     });
-  }, { rootMargin: '240px 120px', threshold: 0.01 });
+  }, { rootMargin: '0px', threshold: 0.25 });
 
   videos.forEach(video => observer.observe(video));
 }
