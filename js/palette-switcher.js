@@ -1,5 +1,6 @@
 // ── PALETTE SWITCHER (temporary — remove when done) ───────────
 const PALETTES = [
+  { name: 'Ballpoint Notebook', bg:'#F3F1E9', bgCard:'#E6E2D7', paper:'#F3F1E9', gridInk:'0,34,255', gridOpacity:'0.055', ink:'#20201A', inkMid:'#55544A', inkLight:'#9A988B', accent:'#0619C8', accentMid:'#1029D8', accentLight:'#5267E8', cream:'#FAF8EF', modalBg:'#F0ECE2', navBg:'243,241,233', navOpacity:'0.78', border:'rgba(6,25,200,0.14)' },
   { name: 'Warm Linen',     bg:'#E8E0D0', bgCard:'#DDD5C4', ink:'#1C2416', inkMid:'#4A5242', inkLight:'#8A9082', accent:'#2D3D26', accentMid:'#3E5234', accentLight:'#6B8060', cream:'#F0EAD8', modalBg:'#EDE8DC', navBg:'232,224,208' },
   { name: 'Chalk & Slate',  bg:'#F0EEE8', bgCard:'#E4E1D8', ink:'#1A1F2E', inkMid:'#454C5E', inkLight:'#8A90A0', accent:'#1A1F2E', accentMid:'#2E3650', accentLight:'#6672A0', cream:'#F8F6F0', modalBg:'#EAE8E0', navBg:'240,238,232' },
   { name: 'Dusty Rose',     bg:'#EDE0DC', bgCard:'#E0D0CB', ink:'#261A18', inkMid:'#5A4240', inkLight:'#9A8280', accent:'#8C3A30', accentMid:'#A04840', accentLight:'#C07870', cream:'#F5EDE8', modalBg:'#E8DCD8', navBg:'237,224,220' },
@@ -38,6 +39,9 @@ function applyPalette(p) {
   const r = document.documentElement.style;
   r.setProperty('--bg', p.bg);
   r.setProperty('--bg-card', p.bgCard);
+  r.setProperty('--paper', p.paper || p.bg);
+  r.setProperty('--grid-ink', p.gridInk || '0,34,255');
+  r.setProperty('--grid-opacity', p.gridOpacity || '0.045');
   r.setProperty('--ink', p.ink);
   r.setProperty('--ink-mid', p.inkMid);
   r.setProperty('--ink-light', p.inkLight);
@@ -46,10 +50,10 @@ function applyPalette(p) {
   r.setProperty('--green-light', p.accentLight);
   r.setProperty('--cream', p.cream);
   r.setProperty('--modal-bg', p.modalBg);
-  r.setProperty('--border', `rgba(${hexToRgb(p.ink)},0.13)`);
+  r.setProperty('--border', p.border || `rgba(${hexToRgb(p.ink)},0.13)`);
   // Nav background inline style (for the rgba transparency)
   const nav = document.querySelector('nav');
-  nav.style.background = `rgba(${p.navBg},0.88)`;
+  nav.style.background = `rgba(${p.navBg},${p.navOpacity || '0.88'})`;
   // Update switcher active state
   document.querySelectorAll('.ps-swatch').forEach((sw, i) => {
     sw.classList.toggle('ps-active', i === currentPalette);

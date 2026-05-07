@@ -224,6 +224,7 @@ function smoothScroll(id) {
 
 function initAll() {
   initInteractions();
+  initActiveNav();
   initCursor();
   initTilt();
   initScrollReveal();
@@ -237,6 +238,7 @@ function initInteractions() {
   document.querySelectorAll('[data-scroll-target]').forEach(link => {
     link.addEventListener('click', event => {
       event.preventDefault();
+      setActiveNav(link.dataset.scrollTarget);
       smoothScroll(link.dataset.scrollTarget);
     });
   });
@@ -284,6 +286,38 @@ function initInteractions() {
     if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
     navigateProject(deltaX < 0 ? 1 : -1);
   }, { passive: true });
+}
+
+function setActiveNav(id) {
+  document.querySelectorAll('[data-scroll-target]').forEach(link => {
+    const active = link.dataset.scrollTarget === id;
+    if (active) {
+      link.setAttribute('aria-current', 'true');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  });
+}
+
+function initActiveNav() {
+  const links = [...document.querySelectorAll('[data-scroll-target]')];
+  const sections = links
+    .map(link => document.getElementById(link.dataset.scrollTarget))
+    .filter(Boolean);
+
+  if (!sections.length || !('IntersectionObserver' in window)) return;
+
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+    if (visible) {
+      setActiveNav(visible.target.id);
+    }
+  }, { rootMargin: '-35% 0px -45% 0px', threshold: [0.08, 0.2, 0.4, 0.6] });
+
+  sections.forEach(section => observer.observe(section));
 }
 
 // ── 1. CUSTOM CURSOR ──────────────────────────────────────────
@@ -366,6 +400,20 @@ function initCoverVideos() {
     return;
   }
 
+  videos.forEach(video => {
+    video.preload = 'auto';
+    video.muted = true;
+    video.playsInline = true;
+
+    const markReady = () => video.classList.add('is-ready');
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      markReady();
+    } else {
+      video.addEventListener('loadeddata', markReady, { once: true });
+    }
+    video.load();
+  });
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const video = entry.target;
@@ -375,7 +423,7 @@ function initCoverVideos() {
         video.pause();
       }
     });
-  }, { threshold: 0.25 });
+  }, { rootMargin: '240px 120px', threshold: 0.01 });
 
   videos.forEach(video => observer.observe(video));
 }
