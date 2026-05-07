@@ -183,6 +183,20 @@
     box-shadow: 0 40px 100px rgba(20,28,16,0.4), 0 0 0 1px rgba(28,36,22,0.1);
   }
   .modal-wrap.active .modal { transform: translateY(0) scale(1); opacity: 1; }
+  .modal-nav-btn {
+    position: fixed; top: 50%; z-index: 320; width: clamp(48px, 6vw, 72px); height: clamp(64px, 8vw, 96px);
+    transform: translateY(-50%); border: 1px solid rgba(240,234,216,0.24); border-radius: 999px;
+    background: rgba(20,28,16,0.28); color: var(--cream); font-family: var(--serif);
+    font-size: clamp(2.8rem, 5vw, 4.8rem); line-height: 0.8; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; visibility: hidden;
+    transition: opacity 0.3s var(--ease-out), background 0.2s, border-color 0.2s, transform 0.2s, visibility 0s 0.3s;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .modal-wrap.active .modal-nav-btn { opacity: 1; pointer-events: auto; visibility: visible; transition-delay: 0s; }
+  .modal-nav-btn:hover { background: rgba(20,28,16,0.5); border-color: rgba(240,234,216,0.5); }
+  .modal-nav-btn:active { transform: translateY(-50%) scale(0.96); }
+  .modal-nav-prev { left: max(1rem, calc((100vw - 1060px) / 2)); padding-right: 0.08em; }
+  .modal-nav-next { right: max(1rem, calc((100vw - 1060px) / 2)); padding-left: 0.08em; }
   .modal-header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.75rem; background: var(--modal-bg); border-bottom: 1px solid var(--border); border-radius: 12px 12px 0 0; }
   .modal-header-left { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
   .modal-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); }
@@ -317,8 +331,11 @@
     footer { padding: 1.25rem; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
     .modal-wrap { padding: 0; align-items: flex-end; }
     .modal { border-radius: 16px 16px 0 0; max-height: 92vh; }
+    .modal-nav-btn { top: auto; bottom: 1.1rem; width: 46px; height: 46px; font-size: 2.5rem; background: rgba(20,28,16,0.42); }
+    .modal-nav-prev { left: 0.85rem; }
+    .modal-nav-next { right: 0.85rem; }
     .gallery-grid, .gallery-grid.col3 { grid-template-columns: 1fr 1fr; }
-    .modal-body { padding: 1.5rem 1.25rem 3rem; }
+    .modal-body { padding: 1.5rem 1.25rem 5rem; }
   }
 </style>
 </head>
@@ -470,6 +487,8 @@
 
 <div class="modal-wrap" id="modalWrap">
   <div class="modal-backdrop" onclick="closeProject()"></div>
+  <button class="modal-nav-btn modal-nav-prev" onclick="navigateProject(-1)" aria-label="Предыдущий проект">‹</button>
+  <button class="modal-nav-btn modal-nav-next" onclick="navigateProject(1)" aria-label="Следующий проект">›</button>
   <div class="modal" id="modal">
     <div class="modal-header">
       <div class="modal-header-left">
@@ -517,20 +536,38 @@ const PROJECTS = [
   { id: 'project-5', title: 'Название проекта', year: '2022', images: ['https://images.unsplash.com/photo-1524253482453-3fed8d2fe12b?w=1200&q=85'], video: null, goal: 'Опишите задачу.', idea: 'Опишите идею.', result: 'Опишите результаты.', role: 'Ваша роль.' },
 ];
 
-function openProject(id) {
+let activeProjectId = null;
+let modalTouchStartX = 0;
+let modalTouchStartY = 0;
+
+function openProject(id, updateHistory = true) {
   const p = PROJECTS.find(x => x.id === id);
   if (!p) return;
-  history.pushState({ projectId: id }, '', '#' + id);
+  activeProjectId = id;
+  if (updateHistory) history.pushState({ projectId: id }, '', '#' + id);
   renderModal(p);
   document.getElementById('modalWrap').classList.add('active');
   document.getElementById('modal').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 }
 
-function closeProject() {
+function closeProject(updateHistory = true) {
   document.getElementById('modalWrap').classList.remove('active');
   document.body.style.overflow = '';
-  history.pushState({}, '', window.location.pathname);
+  activeProjectId = null;
+  if (updateHistory) history.pushState({}, '', window.location.pathname);
+}
+
+function isProjectModalOpen() {
+  return document.getElementById('modalWrap').classList.contains('active');
+}
+
+function navigateProject(direction) {
+  if (!isProjectModalOpen() || PROJECTS.length < 2) return;
+  const currentIndex = PROJECTS.findIndex(p => p.id === activeProjectId);
+  const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+  const nextIndex = (safeIndex + direction + PROJECTS.length) % PROJECTS.length;
+  openProject(PROJECTS[nextIndex].id);
 }
 
 function renderModal(p) {
@@ -690,12 +727,39 @@ function toggleSwitcher() {
 
 window.addEventListener('load', () => { buildSwitcher(); initAll(); });
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProject(); });
-window.addEventListener('popstate', () => { if (!location.hash) closeProject(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeProject();
+  if (e.key === 'ArrowLeft') navigateProject(-1);
+  if (e.key === 'ArrowRight') navigateProject(1);
+});
+window.addEventListener('popstate', () => {
+  const id = location.hash.slice(1);
+  if (id && PROJECTS.find(p => p.id === id)) {
+    openProject(id, false);
+  } else {
+    closeProject(false);
+  }
+});
 window.addEventListener('load', () => {
   const id = location.hash.slice(1);
-  if (id && PROJECTS.find(p => p.id === id)) openProject(id);
+  if (id && PROJECTS.find(p => p.id === id)) openProject(id, false);
 });
+
+document.getElementById('modal').addEventListener('touchstart', e => {
+  if (e.target.closest('button')) return;
+  const touch = e.changedTouches[0];
+  modalTouchStartX = touch.clientX;
+  modalTouchStartY = touch.clientY;
+}, { passive: true });
+
+document.getElementById('modal').addEventListener('touchend', e => {
+  if (e.target.closest('button')) return;
+  const touch = e.changedTouches[0];
+  const deltaX = touch.clientX - modalTouchStartX;
+  const deltaY = touch.clientY - modalTouchStartY;
+  if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+  navigateProject(deltaX < 0 ? 1 : -1);
+}, { passive: true });
 
 function smoothScroll(id, e) {
   if (e) e.preventDefault();
