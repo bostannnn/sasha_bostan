@@ -259,7 +259,7 @@
   .modal {
     position: relative; background: var(--modal-bg);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='none'/%3E%3Cline x1='0' y1='0' x2='4' y2='4' stroke='rgba(28,36,22,0.05)' stroke-width='0.5'/%3E%3Cline x1='4' y1='0' x2='0' y2='4' stroke='rgba(28,36,22,0.03)' stroke-width='0.5'/%3E%3C/svg%3E");
-    border-radius: 12px; width: 100%; max-width: 820px; max-height: 86vh;
+    border-radius: 12px; width: 100%; max-width: 1080px; max-height: 86vh;
     overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent;
     transform: translateY(28px) scale(0.96); opacity: 0;
     transition: transform 0.55s var(--ease-out), opacity 0.4s var(--ease-out);
@@ -268,7 +268,7 @@
   .modal-wrap.active .modal { transform: translateY(0) scale(1); opacity: 1; }
   .modal-controls {
     position: fixed;
-    right: max(1rem, calc((100vw - 820px) / 2));
+    right: max(1rem, calc((100vw - 1080px) / 2));
     bottom: max(1rem, 4vh);
     z-index: 320;
     display: flex;
@@ -361,24 +361,212 @@
   }
   .close-btn:hover { background: var(--bg-card); color: var(--ink); }
   .close-btn:hover::before { opacity: 1; transform: translate(0, -50%); }
-  .modal-body { padding: 2rem 1.75rem 3rem; }
+  .modal-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+    align-items: start;
+    padding: 2rem 1.75rem 3rem;
+  }
 
+  .gallery { min-width: 0; }
+  .media-board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: clamp(84px, 8.6vw, 118px);
+    gap: 0.55rem;
+  }
+  .media-tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--bg-card) 82%, var(--ink) 18%);
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(28,36,22,0.1);
+  }
+  .media-tile:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  .media-tile img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.6s var(--ease-out), filter 0.3s var(--ease-out);
+  }
+  .media-tile:hover img {
+    transform: scale(1.04);
+    filter: saturate(1.05) brightness(0.98);
+  }
+  .media-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(20,28,16,0.5), transparent 52%);
+    opacity: 0.72;
+    transition: opacity 0.25s var(--ease-out);
+  }
+  .media-tile:hover::after { opacity: 0.38; }
+  .media-chip {
+    position: absolute;
+    left: 0.55rem;
+    bottom: 0.5rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--cream);
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 8px rgba(20,28,16,0.55);
+  }
+  .media-play {
+    position: absolute;
+    z-index: 2;
+    right: 0.55rem;
+    bottom: 0.45rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(240,234,216,0.9);
+    color: var(--ink);
+    font-size: 0.72rem;
+    line-height: 1;
+    box-shadow: 0 8px 22px rgba(20,28,16,0.24);
+  }
+  .media-empty {
+    padding: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--ink-light);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-  .gallery { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
-  .gallery-hero img, .gallery-hero video,
-  .gallery-video video { width: 100%; border-radius: 6px; display: block; }
-  .gallery-hero video { aspect-ratio: 16/9; object-fit: cover; background: #000; }
-  .gallery-videos { display: flex; flex-direction: column; gap: 0.75rem; }
-  .gallery-video video { max-height: 72vh; background: #000; }
-  .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .gallery-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
-  .gallery-grid img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; display: block; }
-
-  .text-blocks { display: flex; flex-direction: column; gap: 1.75rem; }
+  .text-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 1.45rem;
+    min-width: 0;
+    padding-top: 0.15rem;
+  }
   .text-block-label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green-light); margin-bottom: 0.5rem; }
   .text-block p { font-size: 0.93rem; line-height: 1.8; color: var(--ink-mid); }
   .text-block-role { margin-top: 0.75rem; padding-top: 1.75rem; border-top: 1px solid var(--border); }
   .text-block-role p { font-size: 0.82rem; color: var(--ink-light); }
+
+  .media-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    height: 100dvh;
+    overflow: hidden;
+    background: rgba(12,16,10,0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.28s var(--ease-out), visibility 0s 0.28s;
+  }
+  .media-viewer.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .media-viewer-top,
+  .media-viewer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: rgba(240,234,216,0.72);
+  }
+  .media-viewer-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    min-width: 0;
+  }
+  .media-viewer-title strong {
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--cream);
+  }
+  .media-viewer-title span,
+  .media-viewer-count {
+    font-size: 0.65rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+  .media-viewer-close,
+  .media-viewer-nav {
+    border: 1px solid rgba(240,234,216,0.18);
+    background: rgba(240,234,216,0.08);
+    color: var(--cream);
+    cursor: pointer;
+    transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+  }
+  .media-viewer-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+  }
+  .media-viewer-nav {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1rem;
+  }
+  .media-viewer-close:hover,
+  .media-viewer-nav:hover {
+    background: rgba(240,234,216,0.16);
+    transform: translateY(-1px);
+  }
+  .media-viewer-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .media-viewer-stage img,
+  .media-viewer-stage video {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 28px 90px rgba(0,0,0,0.35);
+  }
+  .media-viewer-stage img { background: transparent; }
+  .media-viewer-stage video { background: #050505; }
+  .media-viewer-bottom {
+    justify-content: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
 
   @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
   @keyframes fadeUp  { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
@@ -521,8 +709,24 @@
     .modal-controls { left: 50%; right: auto; bottom: 1rem; transform: translate(-50%, 10px); }
     .modal-wrap.active .modal-controls { transform: translate(-50%, 0); }
     .modal-nav-btn { width: 42px; height: 42px; }
-    .gallery-grid, .gallery-grid.col3 { grid-template-columns: 1fr 1fr; }
-    .modal-body { padding: 1.5rem 1.25rem 5rem; }
+    .modal-body {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+      padding: 1.5rem 1.25rem 5rem;
+    }
+    .media-board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: 32vw;
+    }
+    .media-tile:first-child {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+    .media-viewer { padding: 0.9rem; }
+    .media-viewer-title {
+      flex-direction: column;
+      gap: 0.2rem;
+    }
   }
 </style>
 </head>
@@ -678,14 +882,14 @@
   </div>
 </footer>
 
-<div class="modal-wrap" id="modalWrap">
-  <div class="modal-backdrop" onclick="closeProject()"></div>
-  <div class="modal-controls" aria-label="Навигация по проектам">
+<div class="modal-wrap" id="modalWrap" onclick="handleProjectBackdropClick(event)">
+  <div class="modal-backdrop"></div>
+  <div class="modal-controls" aria-label="Навигация по проектам" onclick="event.stopPropagation()">
     <button class="modal-nav-btn modal-nav-prev" onclick="navigateProject(-1)" aria-label="Предыдущий проект">←</button>
     <span class="modal-count" id="modalCount">01 / 05</span>
     <button class="modal-nav-btn modal-nav-next" onclick="navigateProject(1)" aria-label="Следующий проект">→</button>
   </div>
-  <div class="modal" id="modal">
+  <div class="modal" id="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-header-left">
         <span class="modal-label">Проект</span>
@@ -695,6 +899,22 @@
       <button class="close-btn" onclick="closeProject()" aria-label="Закрыть">×</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="media-viewer" id="mediaViewer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="mediaViewerTitle" tabindex="-1" onclick="handleMediaViewerBackdropClick(event)">
+  <div class="media-viewer-top">
+    <div class="media-viewer-title">
+      <strong id="mediaViewerTitle"></strong>
+      <span id="mediaViewerType"></span>
+    </div>
+    <button class="media-viewer-close" onclick="event.stopPropagation(); closeMediaViewer()" aria-label="Закрыть просмотр">×</button>
+  </div>
+  <div class="media-viewer-stage" id="mediaViewerStage"></div>
+  <div class="media-viewer-bottom">
+    <button class="media-viewer-nav" onclick="event.stopPropagation(); navigateMedia(-1)" aria-label="Предыдущий материал">←</button>
+    <span class="media-viewer-count" id="mediaViewerCount">01 / 01</span>
+    <button class="media-viewer-nav" onclick="event.stopPropagation(); navigateMedia(1)" aria-label="Следующий материал">→</button>
   </div>
 </div>
 
@@ -726,13 +946,32 @@ const PROJECTS = [
     result: 'Уже в первые дни рекламной кампании установки приложения превысили 100 000.',
     role: 'Креатив, сценарий, подготовка аниматика, разработка KV совместно с дизайнерами, участие на всех этапах продакшена, адаптация материалов для разных форматов.',
   },
-  { id: 'project-2', title: 'Название проекта', year: '2024', images: ['https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1200&q=85'], video: null, goal: 'Опишите задачу.', idea: 'Опишите идею.', result: 'Опишите результаты.', role: 'Ваша роль.' },
+  {
+    id: 'project-2',
+    title: 'Название проекта',
+    year: '2024',
+    images: [
+      'assets/project_2/image_1.jpg',
+      'assets/project_2/image_2.jpg',
+    ],
+    video: null,
+    videos: [
+      'assets/project_2/video_1.mp4',
+    ],
+    goal: 'Опишите задачу.',
+    idea: 'Опишите идею.',
+    result: 'Опишите результаты.',
+    role: 'Ваша роль.',
+  },
   { id: 'project-3', title: 'Название проекта', year: '2023', images: ['https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=85'], video: null, goal: 'Опишите задачу.', idea: 'Опишите идею.', result: 'Опишите результаты.', role: 'Ваша роль.' },
   { id: 'project-4', title: 'Название проекта', year: '2023', images: ['https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=85'], video: null, goal: 'Опишите задачу.', idea: 'Опишите идею.', result: 'Опишите результаты.', role: 'Ваша роль.' },
   { id: 'project-5', title: 'Название проекта', year: '2022', images: ['https://images.unsplash.com/photo-1524253482453-3fed8d2fe12b?w=1200&q=85'], video: null, goal: 'Опишите задачу.', idea: 'Опишите идею.', result: 'Опишите результаты.', role: 'Ваша роль.' },
 ];
 
 let activeProjectId = null;
+let activeMediaItems = [];
+let activeMediaIndex = 0;
+let lastMediaTrigger = null;
 let modalTouchStartX = 0;
 let modalTouchStartY = 0;
 
@@ -751,10 +990,18 @@ function openProject(id, updateHistory = true) {
 }
 
 function closeProject(updateHistory = true) {
+  closeMediaViewer({ restoreFocus: false });
   document.getElementById('modalWrap').classList.remove('active');
   document.body.style.overflow = '';
   activeProjectId = null;
   if (updateHistory) history.pushState({}, '', window.location.pathname);
+}
+
+function handleProjectBackdropClick(event) {
+  if (isMediaViewerOpen()) return;
+  if (!event.target.closest('.modal, .modal-controls')) {
+    closeProject();
+  }
 }
 
 function isProjectModalOpen() {
@@ -762,6 +1009,10 @@ function isProjectModalOpen() {
 }
 
 function navigateProject(direction) {
+  if (isMediaViewerOpen()) {
+    navigateMedia(direction);
+    return;
+  }
   if (!isProjectModalOpen() || PROJECTS.length < 2) return;
   const currentIndex = PROJECTS.findIndex(p => p.id === activeProjectId);
   const safeIndex = currentIndex === -1 ? 0 : currentIndex;
@@ -776,24 +1027,19 @@ function renderModal(p) {
   const current = String(projectIndex + 1).padStart(2, '0');
   const total = String(PROJECTS.length).padStart(2, '0');
   document.getElementById('modalCount').textContent = `${current} / ${total}`;
-  const images = p.images || [];
-  const extra = images.slice(1);
-  const heroHTML = images[0] ? `<div class="gallery-hero"><img src="${images[0]}" alt="${p.title}"></div>` : '';
-  const gridHTML = extra.length ? `<div class="gallery-grid ${extra.length >= 3 ? 'col3' : ''}">${extra.map(s => `<img src="${s}" alt="" loading="lazy">`).join('')}</div>` : '';
-  const videos = p.videos || (p.video ? [p.video] : []);
-  const posterFor = src => src.replace(/\.mp4$/i, '_poster.jpg');
-  const videoHTML = videos.length
-    ? `<div class="gallery-videos">${videos.map((src, i) => `
-        <div class="gallery-video">
-          <video controls playsinline preload="metadata" poster="${posterFor(src)}" aria-label="${p.title}, видео ${i + 1}">
-            <source src="${src}" type="video/mp4">
-          </video>
-        </div>`).join('')}</div>`
-    : '';
+  const mediaItems = getProjectMedia(p);
+  activeMediaItems = mediaItems;
+  const mediaHTML = mediaItems.length
+    ? `<div class="media-board">${mediaItems.map((item, i) => `
+        <button class="media-tile" onclick="openMediaViewer(${i})" aria-label="${escapeHTML(`Открыть ${item.label}`)}">
+          <img src="${escapeHTML(item.thumb)}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}">
+          <span class="media-chip">${String(i + 1).padStart(2, '0')} · ${item.kind === 'video' ? 'Видео' : 'Изображение'}</span>
+          ${item.kind === 'video' ? '<span class="media-play">▶</span>' : ''}
+        </button>`).join('')}</div>`
+    : '<div class="media-empty">Материалы скоро появятся</div>';
   document.getElementById('modalBody').innerHTML = `
     <div class="gallery">
-      ${heroHTML}
-      ${videoHTML}${gridHTML}
+      ${mediaHTML}
     </div>
     <div class="text-blocks">
       <div class="text-block"><div class="text-block-label">Задача</div><p>${p.goal}</p></div>
@@ -801,6 +1047,86 @@ function renderModal(p) {
       <div class="text-block"><div class="text-block-label">Результат</div><p>${p.result}</p></div>
       <div class="text-block text-block-role"><div class="text-block-label">Роль</div><p>${p.role}</p></div>
     </div>`;
+}
+
+function posterFor(src) {
+  return src.replace(/\.mp4$/i, '_poster.jpg');
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function getProjectMedia(p) {
+  const videos = (p.videos || (p.video ? [p.video] : [])).map((src, i) => ({
+    kind: 'video',
+    src,
+    thumb: posterFor(src),
+    label: `${p.title}, видео ${i + 1}`,
+  }));
+  const images = (p.images || []).map((src, i) => ({
+    kind: 'image',
+    src,
+    thumb: src,
+    label: `${p.title}, изображение ${i + 1}`,
+  }));
+  return [...videos, ...images];
+}
+
+function isMediaViewerOpen() {
+  return document.getElementById('mediaViewer').classList.contains('active');
+}
+
+function openMediaViewer(index) {
+  if (!activeMediaItems.length) return;
+  lastMediaTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  activeMediaIndex = Math.max(0, Math.min(index, activeMediaItems.length - 1));
+  renderMediaViewer();
+  const viewer = document.getElementById('mediaViewer');
+  viewer.classList.add('active');
+  viewer.setAttribute('aria-hidden', 'false');
+  document.querySelector('.media-viewer-close').focus();
+}
+
+function closeMediaViewer({ restoreFocus = true } = {}) {
+  const viewer = document.getElementById('mediaViewer');
+  if (!viewer.classList.contains('active')) return;
+  viewer.classList.remove('active');
+  viewer.setAttribute('aria-hidden', 'true');
+  document.getElementById('mediaViewerStage').innerHTML = '';
+  if (restoreFocus && lastMediaTrigger && document.contains(lastMediaTrigger)) {
+    lastMediaTrigger.focus();
+  }
+  lastMediaTrigger = null;
+}
+
+function handleMediaViewerBackdropClick(event) {
+  if (!event.target.closest('.media-viewer-stage img, .media-viewer-stage video, .media-viewer-top, .media-viewer-bottom')) {
+    closeMediaViewer();
+  }
+}
+
+function navigateMedia(direction) {
+  if (!isMediaViewerOpen() || activeMediaItems.length < 2) return;
+  activeMediaIndex = (activeMediaIndex + direction + activeMediaItems.length) % activeMediaItems.length;
+  renderMediaViewer();
+}
+
+function renderMediaViewer() {
+  const item = activeMediaItems[activeMediaIndex];
+  if (!item) return;
+  document.getElementById('mediaViewerTitle').textContent = PROJECTS.find(p => p.id === activeProjectId)?.title || '';
+  document.getElementById('mediaViewerType').textContent = item.kind === 'video' ? 'Видео' : 'Изображение';
+  document.getElementById('mediaViewerCount').textContent = `${String(activeMediaIndex + 1).padStart(2, '0')} / ${String(activeMediaItems.length).padStart(2, '0')}`;
+  document.getElementById('mediaViewerStage').innerHTML = item.kind === 'video'
+    ? `<video controls autoplay playsinline poster="${escapeHTML(item.thumb)}" aria-label="${escapeHTML(item.label)}"><source src="${escapeHTML(item.src)}" type="video/mp4"></video>`
+    : `<img src="${escapeHTML(item.src)}" alt="${escapeHTML(item.label)}">`;
 }
 
 // ── PALETTE SWITCHER (temporary — remove when done) ───────────
@@ -941,10 +1267,43 @@ function toggleSwitcher() {
 window.addEventListener('load', () => { buildSwitcher(); initAll(); });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeProject();
-  if (e.key === 'ArrowLeft') navigateProject(-1);
-  if (e.key === 'ArrowRight') navigateProject(1);
+  if (e.key === 'Tab' && isMediaViewerOpen()) {
+    trapMediaViewerFocus(e);
+    return;
+  }
+  if (e.key === 'Escape') {
+    if (isMediaViewerOpen()) closeMediaViewer();
+    else closeProject();
+  }
+  if (e.key === 'ArrowLeft') {
+    if (isMediaViewerOpen()) navigateMedia(-1);
+    else navigateProject(-1);
+  }
+  if (e.key === 'ArrowRight') {
+    if (isMediaViewerOpen()) navigateMedia(1);
+    else navigateProject(1);
+  }
 });
+
+function trapMediaViewerFocus(e) {
+  const viewer = document.getElementById('mediaViewer');
+  const focusable = [...viewer.querySelectorAll('button, video[controls], [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if (!focusable.length) {
+    viewer.focus();
+    e.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    last.focus();
+    e.preventDefault();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    first.focus();
+    e.preventDefault();
+  }
+}
 window.addEventListener('popstate', () => {
   const id = location.hash.slice(1);
   if (id && PROJECTS.find(p => p.id === id)) {
