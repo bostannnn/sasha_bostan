@@ -194,6 +194,12 @@
     opacity: 0.95;
     transform: rotate(-0.35deg) scale(1);
   }
+  @media (hover: none) {
+    .project-card.is-active::after {
+      opacity: 0.95;
+      transform: rotate(-0.35deg) scale(1);
+    }
+  }
 
   /* Single uniform height — no nth-child alternation */
   .project-thumb {

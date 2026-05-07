@@ -471,13 +471,26 @@ function initStripProgress() {
 
   total.textContent = String(PROJECTS.length).padStart(2, '0');
 
+  const cards = [...strip.querySelectorAll('.project-card')];
+
   function update() {
     const maxScroll = Math.max(strip.scrollWidth - strip.clientWidth, 1);
     const ratio = Math.min(Math.max(strip.scrollLeft / maxScroll, 0), 1);
     progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
 
-    const activeIndex = Math.round(ratio * (PROJECTS.length - 1));
+    // Pick the card whose center is closest to the strip viewport center —
+    // used for the "current" counter and the mobile active-border state.
+    const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
+    let activeIndex = 0;
+    let bestDist = Infinity;
+    cards.forEach((card, i) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const dist = Math.abs(cardCenter - stripCenter);
+      if (dist < bestDist) { bestDist = dist; activeIndex = i; }
+    });
+
     current.textContent = String(activeIndex + 1).padStart(2, '0');
+    cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
   }
 
   strip.addEventListener('scroll', update, { passive: true });
