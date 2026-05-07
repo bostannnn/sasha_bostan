@@ -164,7 +164,7 @@ function renderMediaViewer() {
 }
 
 window.addEventListener('load', () => {
-  window.initPaletteSwitcher?.();
+  // window.initPaletteSwitcher?.(); // hidden — re-enable to bring back the palette UI
   initAll();
   openProjectFromHash();
 });
@@ -401,7 +401,6 @@ function initCoverVideos() {
   }
 
   videos.forEach(video => {
-    video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
 
@@ -411,7 +410,6 @@ function initCoverVideos() {
     } else {
       video.addEventListener('loadeddata', markReady, { once: true });
     }
-    video.load();
   });
 
   const observer = new IntersectionObserver(entries => {
