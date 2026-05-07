@@ -194,8 +194,11 @@
 
 
   .gallery { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; }
-  .gallery-hero img, .gallery-hero video { width: 100%; border-radius: 6px; display: block; }
+  .gallery-hero img, .gallery-hero video,
+  .gallery-video video { width: 100%; border-radius: 6px; display: block; }
   .gallery-hero video { aspect-ratio: 16/9; object-fit: cover; background: #000; }
+  .gallery-videos { display: flex; flex-direction: column; gap: 0.75rem; }
+  .gallery-video video { max-height: 72vh; background: #000; }
   .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
   .gallery-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
   .gallery-grid img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; display: block; }
@@ -486,6 +489,7 @@
      year   : year string
      images : array of URLs; first = hero, rest = grid
      video  : URL or null
+     videos : array of video URLs
      goal   : Задача text
      idea   : Идея text
      result : Результат text
@@ -496,12 +500,12 @@ const PROJECTS = [
     id: 'vk-video',
     title: 'VK Видео',
     year: '2024',
-    images: [
-      'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&q=85',
-      'https://images.unsplash.com/photo-1635776062764-6d98b67b19c0?w=800&q=80',
-      'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80',
-    ],
+    images: [],
     video: null,
+    videos: [
+      'assets/project_1/video_1.mp4',
+      'assets/project_1/video_2.mp4',
+    ],
     goal: 'Подчеркнуть уникальность VK Видео как универсального сервиса, в котором можно найти любые виды контента, любых российских блогеров в удобном формате отдельного приложения.',
     idea: 'Если мы утверждаем, что у нас есть «всё и все», значит, мы можем почелленджить сервис. Поэтому герои ролика из раза в раз задаются вопросом «Даже [...] есть в VK Видео?» и получают на него ответ, позволяющий нестандартно заявить контент.',
     result: 'Уже в первые дни рекламной кампании установки приложения превысили 100 000.',
@@ -532,12 +536,23 @@ function closeProject() {
 function renderModal(p) {
   document.getElementById('modalTitleSm').textContent = p.title;
   document.getElementById('modalYearSm').textContent = p.year;
-  const extra = p.images.slice(1);
+  const images = p.images || [];
+  const extra = images.slice(1);
+  const heroHTML = images[0] ? `<div class="gallery-hero"><img src="${images[0]}" alt="${p.title}"></div>` : '';
   const gridHTML = extra.length ? `<div class="gallery-grid ${extra.length >= 3 ? 'col3' : ''}">${extra.map(s => `<img src="${s}" alt="" loading="lazy">`).join('')}</div>` : '';
-  const videoHTML = p.video ? `<div class="gallery-hero"><video controls playsinline><source src="${p.video}"></video></div>` : '';
+  const videos = p.videos || (p.video ? [p.video] : []);
+  const posterFor = src => src.replace(/\.mp4$/i, '_poster.jpg');
+  const videoHTML = videos.length
+    ? `<div class="gallery-videos">${videos.map((src, i) => `
+        <div class="gallery-video">
+          <video controls playsinline preload="metadata" poster="${posterFor(src)}" aria-label="${p.title}, видео ${i + 1}">
+            <source src="${src}" type="video/mp4">
+          </video>
+        </div>`).join('')}</div>`
+    : '';
   document.getElementById('modalBody').innerHTML = `
     <div class="gallery">
-      <div class="gallery-hero"><img src="${p.images[0]}" alt="${p.title}"></div>
+      ${heroHTML}
       ${videoHTML}${gridHTML}
     </div>
     <div class="text-blocks">
