@@ -435,7 +435,7 @@ function initBadgeSway() {
     speed += (speedT - speed) * dt * 3;
 
     t += speed * dt;
-    wrap.style.transform = `rotate(${Math.sin(t) * amp}deg)`;
+    wrap.style.transform = `scale(1.25) rotate(${Math.sin(t) * amp}deg)`;
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
