@@ -146,13 +146,11 @@ window.PROJECTS = [
   },
   {
     id: 'project-9',
-    title: 'Название проекта',
-    year: '2022',
+    title: 'VK Знакомства Сделай первый шаг',
+    year: '2024',
     images: [],
     video: null,
-    videos: [
-      'assets/project_9/video_1.mp4',
-    ],
+    videos: [],
     goal: 'Опишите задачу.',
     idea: 'Опишите идею.',
     result: 'Опишите результаты.',
