@@ -241,13 +241,14 @@ window.PROJECTS = [
   },
   {
     id: 'project-15',
-    title: 'Название проекта',
+    title: 'VK Видео Даже?',
     year: '2024',
-    images: [],
+    images: [
+      'assets/project_15/image_1.jpg',
+    ],
     video: null,
     videos: [
       'assets/project_15/video_1.mp4',
-      'assets/project_15/video_2.mp4',
     ],
     goal: 'Опишите задачу.',
     idea: 'Опишите идею.',
