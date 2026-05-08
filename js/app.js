@@ -56,7 +56,6 @@ function navigateProject(direction) {
 
 function renderModal(p) {
   document.getElementById('modalTitleSm').textContent = p.title;
-  document.getElementById('modalYearSm').textContent = p.year;
   const projectIndex = PROJECTS.findIndex(x => x.id === p.id);
   const current = String(projectIndex + 1).padStart(2, '0');
   const total = String(PROJECTS.length).padStart(2, '0');
