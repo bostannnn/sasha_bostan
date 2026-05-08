@@ -353,4 +353,33 @@ window.PROJECTS = [
     result: 'Опишите результаты.',
     role: 'Ваша роль.',
   },
+  {
+    id: 'project-22',
+    title: 'VK Новый год',
+    year: '2024',
+    images: [],
+    video: null,
+    videos: [
+      'assets/project_22/video_1.mp4',
+    ],
+    goal: 'Опишите задачу.',
+    idea: 'Опишите идею.',
+    result: 'Опишите результаты.',
+    role: 'Ваша роль.',
+  },
+  {
+    id: 'project-23',
+    title: 'VK Музыка Сниппеты',
+    year: '2024',
+    images: [],
+    video: null,
+    videos: [
+      'assets/project_23/video_1.mp4',
+      'assets/project_23/video_2.mp4',
+    ],
+    goal: 'Опишите задачу.',
+    idea: 'Опишите идею.',
+    result: 'Опишите результаты.',
+    role: 'Ваша роль.',
+  },
 ];
