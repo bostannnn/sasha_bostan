@@ -128,7 +128,7 @@ window.PROJECTS = [
   },
   {
     id: 'project-8',
-    title: 'Название проекта',
+    title: 'VK Музыка Нравится',
     year: '2022',
     images: [
       'assets/project_8/image_1.jpg',
