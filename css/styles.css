@@ -104,7 +104,7 @@
   }
   .nav-links a[aria-current="true"] { color: var(--ink); }
 
-  .projects-section { position: relative; padding-top: 3.5rem; }
+  .projects-section { position: relative; padding-top: 4.5rem; }
   .projects-strip {
     display: flex; gap: 0.35rem;
     padding: 0.5rem 2.5rem 3rem;
@@ -267,29 +267,10 @@
   .about-section { padding: 5rem 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; max-width: 1100px; }
   .badge-column { display: flex; flex-direction: column; align-items: center; }
   .about-text-block { padding-top: 5.5rem; } /* lanyard height + badge header, so headline = top of photo */
-  .about-text-block h2 { font-family: var(--serif); font-size: clamp(1.7rem, 3vw, 2.5rem); font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 1.75rem; color: var(--ink); }
-  .about-text-block h2 em { font-style: italic; color: var(--green-mid); }
   .about-bio { font-size: 0.95rem; line-height: 1.8; color: var(--ink-mid); margin-bottom: 1.25rem; }
 
   .contact-section { padding: 5rem 2.5rem; background: var(--green); border-radius: 12px 12px 0 0; position: relative; }
 
-  /* ─── HINAKO ─── */
-  #hinako-wrap {
-    width: 80px;
-    pointer-events: none;
-    transform-origin: bottom center;
-    animation: hinakoBreathe 3.5s ease-in-out infinite;
-  }
-  #hinako-wrap img {
-    width: 100%;
-    display: block;
-    image-rendering: pixelated;
-    mix-blend-mode: screen;
-  }
-  @keyframes hinakoBreathe {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-3px); }
-  }
   #naruto-wrap {
     position: relative;
     width: 100%;
@@ -357,7 +338,6 @@
   .contact-links a:hover::before { width: 28px; }
   .contact-links a:hover::after { opacity: 1; transform: translateX(0); }
   footer { padding: 1.5rem 2.5rem; background: var(--green); border-top: 1px solid rgba(240,234,216,0.08); }
-  .footer-hinako { display: flex; justify-content: flex-start; padding-bottom: 0.5rem; }
   .footer-bottom { display: flex; justify-content: space-between; align-items: center; }
   footer span { font-size: 0.7rem; color: rgba(240,234,216,0.25); letter-spacing: 0.06em; }
 
@@ -437,7 +417,6 @@
   .modal-header-left { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
   .modal-label { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); }
   .modal-title-sm { font-family: var(--serif); font-size: 0.98rem; font-weight: 400; color: var(--ink); }
-  .modal-year-sm { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--ink-light); }
   .close-btn {
     position: relative;
     background: none;
@@ -735,11 +714,20 @@
     align-items: center;
   }
   #badge-wrap {
+    --badge-scale: 1.25;
+    --badge-sway: 0deg;
     display: inline-block;
     transform-origin: top center;
+    transform: scale(var(--badge-scale)) rotate(var(--badge-sway));
+    /* Reserve extra layout space for the scaled height so the badge
+       doesn't overflow into the bio text below. */
+    margin-bottom: calc((var(--badge-scale) - 1) * 380px);
     filter: drop-shadow(0 12px 32px rgba(28,36,22,0.2));
     cursor: default;
     will-change: transform;
+  }
+  @media (max-width: 640px) {
+    #badge-wrap { --badge-scale: 1; }
   }
 
   #badge-lanyard {
@@ -822,7 +810,6 @@
     .about-section { padding: 3.5rem 1.25rem; grid-template-columns: 1fr; gap: 2.5rem; }
     .badge-column { align-items: center; }
     .about-text-block { padding-top: 0; text-align: center; }
-    .about-text-block h2 { font-size: clamp(1.8rem, 8vw, 2.4rem); }
     .contact-section { padding: 3.5rem 1.25rem; }
     .contact-inner { flex-direction: column; align-items: flex-start; }
     .contact-links { align-items: flex-start; }

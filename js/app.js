@@ -342,7 +342,7 @@ function initCursor() {
     }
   });
 
-  const hovers = 'a, button, .project-card, #badge-wrap, .ps-swatch, .close-btn';
+  const hovers = 'a, button, .project-card, #badge-wrap, .close-btn';
   document.addEventListener('mouseover', e => {
     if (e.target.closest(hovers)) document.body.classList.add('cursor-hover');
     if (e.target.closest('.project-card')) document.body.classList.add('cursor-project');
@@ -442,7 +442,9 @@ function initBadgeSway() {
     speed += (speedT - speed) * dt * 3;
 
     t += speed * dt;
-    wrap.style.transform = `scale(1.25) rotate(${Math.sin(t) * amp}deg)`;
+    // Write only the sway angle — scale lives in CSS so a media query
+    // can drop it on mobile without JS branching.
+    wrap.style.setProperty('--badge-sway', `${Math.sin(t) * amp}deg`);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
