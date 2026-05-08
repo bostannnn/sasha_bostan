@@ -60,6 +60,9 @@
     isolation: isolate;
     transition: color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
   }
+  /* Pen-drawn circle nav selector — disabled in favour of a basic underline.
+     Keep around so we can swap back if we want the hand-drawn aesthetic again. */
+  /*
   .nav-links a::before {
     content: '';
     position: absolute;
@@ -74,25 +77,30 @@
     z-index: -1;
     pointer-events: none;
   }
-  .nav-links a::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -0.12rem;
-    height: 1px;
-    background: currentColor;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.35s var(--ease-out);
-  }
-  .nav-links a:hover { color: var(--ink); transform: translateY(-1px); }
-  .nav-links a:hover::after { transform: scaleX(0); }
   .nav-links a:hover::before,
   .nav-links a:focus-visible::before,
   .nav-links a[aria-current="true"]::before {
     opacity: 0.92;
     transform: translateY(-50%) rotate(-2deg) scale(1);
+  }
+  */
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.25rem;
+    height: 3px;
+    background: var(--green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s var(--ease-out);
+  }
+  .nav-links a:hover { color: var(--ink); transform: translateY(-1px); }
+  .nav-links a:hover::after,
+  .nav-links a:focus-visible::after,
+  .nav-links a[aria-current="true"]::after {
+    transform: scaleX(1);
   }
   .nav-links a[aria-current="true"] { color: var(--ink); }
 
@@ -145,6 +153,9 @@
     cursor: pointer;
     isolation: isolate;
   }
+  /* Hand-drawn pen border around the thumb — disabled in favour of a
+     plain CSS outline. Keep the rules around so we can switch back. */
+  /*
   .project-card::after {
     content: '';
     position: absolute;
@@ -162,33 +173,17 @@
       url('../assets/pen/border-bottom.png'),
       url('../assets/pen/border-bottom-right.png');
     background-position:
-      0 -1%,
-      center 2%,
-      100% -1%,
-      1% center,
-      99% center,
-      0 98%,
-      center 98%,
-      101% 99%;
+      0 -1%, center 2%, 100% -1%, 1% center,
+      99% center, 0 98%, center 98%, 101% 99%;
     background-size:
-      15% auto,
-      33% auto,
-      14% auto,
-      auto 25%,
-      auto 24%,
-      14% auto,
-      34% auto,
-      15% auto;
+      15% auto, 33% auto, 14% auto, auto 25%,
+      auto 24%, 14% auto, 34% auto, 15% auto;
     background-repeat: no-repeat;
     opacity: 0;
     pointer-events: none;
     transform: rotate(-0.35deg) scale(0.985);
     transition: opacity 0.24s var(--ease-out), transform 0.28s var(--ease-out);
     z-index: 4;
-  }
-  .project-card:hover,
-  .project-card:focus-visible {
-    z-index: 5;
   }
   .project-card:hover::after,
   .project-card:focus-visible::after {
@@ -201,6 +196,11 @@
       transform: rotate(-0.35deg) scale(1);
     }
   }
+  */
+  .project-card:hover,
+  .project-card:focus-visible {
+    z-index: 5;
+  }
 
   /* Single uniform height — no nth-child alternation */
   .project-thumb {
@@ -208,6 +208,20 @@
     height: clamp(330px, 60vh, 510px);
     overflow: hidden; border-radius: 6px; background: var(--bg-card);
     z-index: 1;
+    outline: 0 solid var(--green);
+    outline-offset: 0;
+    transition: outline-width 0.24s var(--ease-out), outline-offset 0.24s var(--ease-out);
+  }
+  .project-card:hover .project-thumb,
+  .project-card:focus-visible .project-thumb {
+    outline-width: 6px;
+    outline-offset: 2px;
+  }
+  @media (hover: none) {
+    .project-card.is-active .project-thumb {
+      outline-width: 6px;
+      outline-offset: 2px;
+    }
   }
   .project-thumb img,
   .project-thumb video {
