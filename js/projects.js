@@ -239,6 +239,7 @@ window.PROJECTS = [
     video: null,
     videos: [
       'assets/project_12/video_1.mp4',
+      'assets/project_12/video_2.mp4',
     ],
     goal: 'Разработка креативной рамки для Дзена.',
     idea: 'Найди свой Дзен.',
