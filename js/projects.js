@@ -8,6 +8,11 @@ window.PROJECTS = [
     videos: [
       'assets/project_1/video_1.mp4',
       'assets/project_1/video_2.mp4',
+      'assets/project_1/video_3.mp4',
+      'assets/project_1/video_4.mp4',
+      'assets/project_1/video_5.mp4',
+      'assets/project_1/video_6.mp4',
+      'assets/project_1/video_7.mp4',
     ],
     goal: 'Рассказать о запуске раздела VK Видео Детям.',
     idea: 'VK Видео Детям — территория только для детей. Взрослым не входить!',
