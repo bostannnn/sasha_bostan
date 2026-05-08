@@ -372,12 +372,6 @@ function initTilt() {
 
 // ── 3. SCROLL REVEAL ─────────────────────────────────────────
 function initScrollReveal() {
-  // Also mark project cards as reveal
-  document.querySelectorAll('.project-card').forEach((card, i) => {
-    card.classList.add('reveal');
-    card.style.transitionDelay = `${i * 0.08}s`;
-  });
-
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
