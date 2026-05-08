@@ -207,9 +207,12 @@ window.PROJECTS = [
   },
   {
     id: 'project-13',
-    title: 'Название проекта',
-    year: '2022',
-    images: [],
+    title: 'VK Видео Дед Видос',
+    year: '2024',
+    images: [
+      'assets/project_13/image_1.jpg',
+      'assets/project_13/image_2.jpg',
+    ],
     video: null,
     videos: [
       'assets/project_13/video_1.mp4',
