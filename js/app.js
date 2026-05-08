@@ -75,8 +75,8 @@ function renderModal(p) {
       ${mediaHTML}
     </div>
     <div class="text-blocks">
-      <div class="text-block"><div class="text-block-label">Задача</div><p>${p.goal}</p></div>
-      <div class="text-block"><div class="text-block-label">Идея</div><p>${p.idea}</p></div>
+      ${p.goal ? `<div class="text-block"><div class="text-block-label">Задача</div><p>${p.goal}</p></div>` : ''}
+      ${p.idea ? `<div class="text-block"><div class="text-block-label">Идея</div><p>${p.idea}</p></div>` : ''}
       ${p.execution ? `<div class="text-block"><div class="text-block-label">Что сделали</div><p>${p.execution}</p></div>` : ''}
       ${p.result ? `<div class="text-block"><div class="text-block-label">Результат</div><p>${p.result}</p></div>` : ''}
       <div class="text-block text-block-role"><div class="text-block-label">Роль</div><p>${p.role}</p></div>
