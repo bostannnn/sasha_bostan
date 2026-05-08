@@ -104,10 +104,10 @@
   }
   .nav-links a[aria-current="true"] { color: var(--ink); }
 
-  .projects-section { position: relative; padding-top: 6.5rem; }
+  .projects-section { position: relative; padding-top: 3.5rem; }
   .projects-strip {
     display: flex; gap: 0.35rem;
-    padding: 1rem 2.5rem 3rem;
+    padding: 0.5rem 2.5rem 3rem;
     overflow-x: auto; scroll-behavior: smooth;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
