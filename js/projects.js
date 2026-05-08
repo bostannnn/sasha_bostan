@@ -192,6 +192,20 @@ window.PROJECTS = [
     role: 'Ваша роль.',
   },
   {
+    id: 'project-12',
+    title: 'Найди свой Дзен',
+    year: '2024',
+    images: [],
+    video: null,
+    videos: [
+      'assets/project_12/video_1.mp4',
+    ],
+    goal: 'Опишите задачу.',
+    idea: 'Опишите идею.',
+    result: 'Опишите результаты.',
+    role: 'Ваша роль.',
+  },
+  {
     id: 'project-13',
     title: 'Название проекта',
     year: '2022',
