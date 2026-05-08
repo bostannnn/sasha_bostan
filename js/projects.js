@@ -158,11 +158,9 @@ window.PROJECTS = [
   },
   {
     id: 'project-10',
-    title: 'Название проекта',
-    year: '2022',
-    images: [
-      'assets/project_10/image_1.jpg',
-    ],
+    title: 'VK WorkSpace Команда скажет спасибо',
+    year: '2024',
+    images: [],
     video: null,
     videos: [
       'assets/project_10/video_1.mp4',
@@ -170,7 +168,6 @@ window.PROJECTS = [
       'assets/project_10/video_3.mp4',
       'assets/project_10/video_4.mp4',
       'assets/project_10/video_5.mp4',
-      'assets/project_10/video_6.mp4',
     ],
     goal: 'Опишите задачу.',
     idea: 'Опишите идею.',
@@ -185,24 +182,6 @@ window.PROJECTS = [
     video: null,
     videos: [
       'assets/project_13/video_1.mp4',
-    ],
-    goal: 'Опишите задачу.',
-    idea: 'Опишите идею.',
-    result: 'Опишите результаты.',
-    role: 'Ваша роль.',
-  },
-  {
-    id: 'project-14',
-    title: 'Название проекта',
-    year: '2024',
-    images: [],
-    video: null,
-    videos: [
-      'assets/project_14/video_1.mp4',
-      'assets/project_14/video_2.mp4',
-      'assets/project_14/video_3.mp4',
-      'assets/project_14/video_4.mp4',
-      'assets/project_14/video_5.mp4',
     ],
     goal: 'Опишите задачу.',
     idea: 'Опишите идею.',
