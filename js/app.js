@@ -75,16 +75,23 @@ function renderModal(p) {
       ${mediaHTML}
     </div>
     <div class="text-blocks">
-      ${p.goal ? `<div class="text-block"><div class="text-block-label">Задача</div><p>${p.goal}</p></div>` : ''}
-      ${p.idea ? `<div class="text-block"><div class="text-block-label">Идея</div><p>${p.idea}</p></div>` : ''}
-      ${p.execution ? `<div class="text-block"><div class="text-block-label">Что сделали</div><p>${p.execution}</p></div>` : ''}
-      ${p.result ? `<div class="text-block"><div class="text-block-label">Результат</div><p>${p.result}</p></div>` : ''}
-      <div class="text-block text-block-role"><div class="text-block-label">Роль</div><p>${p.role}</p></div>
+      ${p.goal ? `<div class="text-block"><div class="text-block-label">Задача</div><p>${formatRichText(p.goal)}</p></div>` : ''}
+      ${p.idea ? `<div class="text-block"><div class="text-block-label">Идея</div><p>${formatRichText(p.idea)}</p></div>` : ''}
+      ${p.execution ? `<div class="text-block"><div class="text-block-label">Что сделали</div><p>${formatRichText(p.execution)}</p></div>` : ''}
+      ${p.result ? `<div class="text-block"><div class="text-block-label">Результат</div><p>${formatRichText(p.result)}</p></div>` : ''}
+      <div class="text-block text-block-role"><div class="text-block-label">Роль</div><p>${formatRichText(p.role)}</p></div>
     </div>`;
 }
 
 function posterFor(src) {
   return src.replace(/\.mp4$/i, '_poster.jpg');
+}
+
+// Insert paragraph breaks before numbered list markers ("1. ", "2. ", ...)
+// so multi-item briefs read as a list rather than one long blob.
+function formatRichText(text) {
+  if (!text) return '';
+  return text.replace(/(\S)\s+(\d+\.\s)/g, '$1<br><br>$2');
 }
 
 function escapeHTML(value) {
