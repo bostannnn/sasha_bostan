@@ -106,7 +106,7 @@
 
   .projects-section { position: relative; padding-top: 4.5rem; }
   .projects-strip {
-    display: flex; gap: 1.25rem;
+    display: flex; gap: 0.6rem;
     padding: 2rem 2.5rem 3rem;
     overflow-x: auto; scroll-behavior: smooth;
     scrollbar-width: none; -ms-overflow-style: none;
@@ -810,7 +810,7 @@
   @media (max-width: 640px) {
     nav { padding: 1rem 1.25rem; }
     .nav-role { display: none; }
-    .projects-strip { padding: 1.5rem 1.25rem 2.5rem; gap: 1rem; }
+    .projects-strip { padding: 1.5rem 1.25rem 2.5rem; gap: 0.5rem; }
     /* 72vw wide card, 108vw tall = portrait ~3:2 — stays tall, not square */
     .project-card { width: 72vw; }
     .project-card { padding: 1.4rem 1.6rem 0; }
