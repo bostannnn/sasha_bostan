@@ -110,7 +110,7 @@
     padding: 2rem 2.5rem 3rem;
     overflow-x: auto; scroll-behavior: smooth;
     scrollbar-width: none; -ms-overflow-style: none;
-    cursor: grab; align-items: flex-end;
+    cursor: grab; align-items: flex-start;
   }
   .projects-strip:active { cursor: grabbing; }
   .projects-strip::-webkit-scrollbar { display: none; }
@@ -253,6 +253,9 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 1rem;
+    /* Reserve space for up to 2-line names so total card height
+       is consistent regardless of caption length. */
+    min-height: 3.5rem;
   }
   .project-name { font-family: var(--serif); font-size: 0.98rem; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
   .project-year { font-size: 0.7rem; color: var(--ink-light); letter-spacing: 0.07em; white-space: nowrap; }
