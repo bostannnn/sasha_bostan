@@ -234,6 +234,7 @@ window.PROJECTS = [
     video: null,
     videos: [
       'assets/project_13/video_1.mp4',
+      'assets/project_13/video_2.mp4',
     ],
     goal: 'Рассказать, что в VK Видео есть разнообразный новогодний контент.',
     idea: 'Дед Видос — VK Видео принёс!',
