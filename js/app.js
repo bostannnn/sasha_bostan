@@ -237,6 +237,7 @@ function initAll() {
   initScrollReveal();
   initCoverVideos();
   initDragScroll();
+  initWheelGlide();
   initStripProgress();
   initBadgeSway();
 }
@@ -517,6 +518,68 @@ function initDragScroll() {
   el.addEventListener('mouseleave', release);
   el.addEventListener('wheel', stopInertia, { passive: true });
   el.addEventListener('touchstart', stopInertia, { passive: true });
+}
+
+// Wheel-driven smooth glide for trackpad horizontal swipes AND vertical
+// mouse wheel — both feed into a single target-following rAF loop so the
+// strip glides past the wheel/swipe end instead of stopping dead.
+function initWheelGlide() {
+  const el = document.getElementById('strip');
+  if (!el) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let target = el.scrollLeft;
+  let raf = 0;
+  let last = 0;
+  let active = false;
+
+  function tick(now) {
+    const dt = Math.min(now - last, 32);
+    last = now;
+    const diff = target - el.scrollLeft;
+    if (Math.abs(diff) < 0.5) {
+      el.scrollLeft = target;
+      raf = 0;
+      active = false;
+      return;
+    }
+    // Lerp at ~15%/frame — closes the gap geometrically, so big flings
+    // glide for noticeably longer than small ticks (~0.5s tail).
+    el.scrollLeft += diff * Math.min(0.15 * (dt / 16), 0.4);
+    raf = requestAnimationFrame(tick);
+  }
+
+  el.addEventListener('wheel', e => {
+    // Use whichever axis dominates. Mouse-wheel users send pure deltaY;
+    // trackpad horizontal-swipe sends deltaX; mac trackpad vertical
+    // sends deltaY which we remap to horizontal scroll for this strip.
+    const ax = Math.abs(e.deltaX);
+    const ay = Math.abs(e.deltaY);
+    const delta = ax > ay ? e.deltaX : e.deltaY;
+    if (Math.abs(delta) < 0.5) return;
+    e.preventDefault();
+    if (!active) {
+      target = el.scrollLeft;
+      active = true;
+    }
+    target += delta * 1.6;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (target < 0) target = 0;
+    else if (target > maxScroll) target = maxScroll;
+    if (!raf) {
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    }
+  }, { passive: false });
+
+  // If the user starts dragging or touching, give up the wheel target so
+  // drag/touch input controls scrollLeft directly without fighting.
+  const surrender = () => {
+    active = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  };
+  el.addEventListener('mousedown', surrender);
+  el.addEventListener('touchstart', surrender, { passive: true });
 }
 
 function initStripProgress() {
