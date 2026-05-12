@@ -104,13 +104,24 @@
   }
   .nav-links a[aria-current="true"] { color: var(--ink); }
 
-  .projects-section { position: relative; padding-top: 4.5rem; }
+  .projects-section { position: relative; padding-top: 4.5rem; perspective: 1400px; }
   .projects-strip {
     display: flex; gap: 0.35rem;
     padding: 0.5rem 2.5rem 3rem;
-    overflow-x: auto; scroll-behavior: smooth;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
+    /* Soft fade at strip edges so cards melt in/out instead of hard-cropping. */
+    mask: linear-gradient(to right, transparent 0, #000 3.5rem, #000 calc(100% - 3.5rem), transparent 100%);
+    -webkit-mask: linear-gradient(to right, transparent 0, #000 3.5rem, #000 calc(100% - 3.5rem), transparent 100%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .projects-strip {
+      scroll-snap-type: none;
+      mask: none;
+      -webkit-mask: none;
+    }
   }
   .projects-strip:active { cursor: grabbing; }
   .projects-strip::-webkit-scrollbar { display: none; }
@@ -152,6 +163,29 @@
     padding: 1.6rem 2rem 0;
     cursor: pointer;
     isolation: isolate;
+    scroll-snap-align: center;
+    /* Composable transform — each animation writes one variable instead of
+       overwriting the whole transform. Stays at neutral when JS is off. */
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    --card-scale: 1;
+    --card-bend: 0deg;
+    --card-lean: 0deg;
+    transform:
+      rotateX(var(--tilt-x))
+      rotateY(calc(var(--tilt-y) + var(--card-bend)))
+      rotateZ(var(--card-lean))
+      scale(var(--card-scale));
+    transition: transform 0.4s var(--ease-out);
+    will-change: transform;
+  }
+  .project-card.is-dragging,
+  .projects-strip.is-scrolling .project-card {
+    /* While interacting, let JS drive transform without smoothing. */
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .project-card { transform: none; transition: none; }
   }
   /* Hand-drawn pen border around the thumb — disabled in favour of a
      plain CSS outline. Keep the rules around so we can switch back. */
@@ -792,7 +826,8 @@
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
   /* ─── CARD TILT ─── */
-  .project-card { transform-style: preserve-3d; transition: transform 0.15s ease-out; }
+  /* preserve-3d on the thumb keeps its inner image plane participating in
+     the parent's perspective for the bend effect. */
   .project-thumb { transform-style: preserve-3d; }
 
   @media (max-width: 640px) {

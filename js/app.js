@@ -356,23 +356,21 @@ function initCursor() {
 }
 
 // ── 2. CARD TILT ON HOVER ────────────────────────────────────
+// Tilt now writes to CSS variables (--tilt-x / --tilt-y) so it composes with
+// scroll-driven scale, bend, and lean instead of clobbering them.
 function initTilt() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   document.querySelectorAll('.project-card').forEach(card => {
     card.addEventListener('mousemove', e => {
       const r = card.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width  - 0.5;  // -0.5 → +0.5
+      const x = (e.clientX - r.left) / r.width  - 0.5;
       const y = (e.clientY - r.top)  / r.height - 0.5;
-      const tiltX = -y * 10;   // degrees
-      const tiltY =  x * 10;
-      card.style.transform = `perspective(600px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+      card.style.setProperty('--tilt-x', `${-y * 8}deg`);
+      card.style.setProperty('--tilt-y', `${x * 8}deg`);
     });
     card.addEventListener('mouseleave', () => {
-      card.style.transition = 'transform 0.5s var(--ease-out)';
-      card.style.transform  = 'perspective(600px) rotateX(0deg) rotateY(0deg) scale(1)';
-      setTimeout(() => card.style.transition = '', 500);
-    });
-    card.addEventListener('mouseenter', () => {
-      card.style.transition = 'transform 0.1s ease-out';
+      card.style.setProperty('--tilt-x', '0deg');
+      card.style.setProperty('--tilt-y', '0deg');
     });
   });
 }
@@ -454,15 +452,72 @@ function initBadgeSway() {
 
 function initDragScroll() {
   const el = document.getElementById('strip');
-  let down = false, startX, left;
-  el.addEventListener('mousedown', e => { down = true; startX = e.pageX - el.offsetLeft; left = el.scrollLeft; });
-  el.addEventListener('mouseleave', () => down = false);
-  el.addEventListener('mouseup', () => down = false);
+  if (!el) return;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let down = false, startX, startScrollLeft;
+  let lastX = 0, lastT = 0, velocity = 0;
+  let inertiaRaf = 0;
+
+  function stopInertia() {
+    if (inertiaRaf) cancelAnimationFrame(inertiaRaf);
+    inertiaRaf = 0;
+    velocity = 0;
+  }
+
+  function startInertia() {
+    if (reduceMotion || Math.abs(velocity) < 0.02) return;
+    let last = performance.now();
+    const tick = now => {
+      const dt = Math.min(now - last, 32);
+      last = now;
+      el.scrollLeft -= velocity * dt;
+      // Exponential decay; ~0.94 per 16ms frame feels like a slick trackpad fling.
+      velocity *= Math.pow(0.94, dt / 16);
+      if (Math.abs(velocity) > 0.02) {
+        inertiaRaf = requestAnimationFrame(tick);
+      } else {
+        inertiaRaf = 0;
+        velocity = 0;
+      }
+    };
+    inertiaRaf = requestAnimationFrame(tick);
+  }
+
+  el.addEventListener('mousedown', e => {
+    stopInertia();
+    down = true;
+    el.classList.add('is-dragging');
+    startX = e.pageX;
+    startScrollLeft = el.scrollLeft;
+    lastX = e.pageX;
+    lastT = performance.now();
+    velocity = 0;
+  });
   el.addEventListener('mousemove', e => {
     if (!down) return;
     e.preventDefault();
-    el.scrollLeft = left - (e.pageX - el.offsetLeft - startX) * 1.4;
+    const now = performance.now();
+    const dx = e.pageX - lastX;
+    const dt = Math.max(now - lastT, 1);
+    // Velocity in px/ms — same units inertia consumes below.
+    velocity = dx / dt;
+    lastX = e.pageX;
+    lastT = now;
+    el.scrollLeft = startScrollLeft - (e.pageX - startX) * 1.4;
   });
+  const release = () => {
+    if (!down) return;
+    down = false;
+    el.classList.remove('is-dragging');
+    startInertia();
+  };
+  el.addEventListener('mouseup', release);
+  el.addEventListener('mouseleave', release);
+  // If the user starts a wheel/touch scroll, kill any running inertia
+  // so we don't fight native momentum.
+  el.addEventListener('wheel', stopInertia, { passive: true });
+  el.addEventListener('touchstart', stopInertia, { passive: true });
 }
 
 function initStripProgress() {
@@ -475,28 +530,95 @@ function initStripProgress() {
   total.textContent = String(PROJECTS.length).padStart(2, '0');
 
   const cards = [...strip.querySelectorAll('.project-card')];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scroll velocity tracking — drives the "lean" effect.
+  let lastScrollLeft = strip.scrollLeft;
+  let lastT = performance.now();
+  let lean = 0;
+  let activeIndex = -1;
+  let scrolling = false;
+  let scrollSettleTimer = 0;
+  let rafId = 0;
 
   function update() {
+    rafId = 0;
+
     const maxScroll = Math.max(strip.scrollWidth - strip.clientWidth, 1);
     const ratio = Math.min(Math.max(strip.scrollLeft / maxScroll, 0), 1);
     progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
 
-    // Pick the card whose center is closest to the strip viewport center —
-    // used for the "current" counter and the mobile active-border state.
+    // Velocity in px/ms (decayed so a single scroll pulse doesn't linger).
+    const now = performance.now();
+    const dt = Math.max(now - lastT, 1);
+    const dx = strip.scrollLeft - lastScrollLeft;
+    const instantVelocity = dx / dt;
+    lastScrollLeft = strip.scrollLeft;
+    lastT = now;
+    lean = lean * 0.7 + instantVelocity * 0.3;
+    // Clamp lean to a tasteful range (max ±2deg).
+    const leanDeg = Math.max(-2, Math.min(2, lean * -0.6));
+
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
-    let activeIndex = 0;
+    const reach = strip.clientWidth * 0.5; // distance over which bend/scale fade out
+    let bestIdx = 0;
     let bestDist = Infinity;
+
     cards.forEach((card, i) => {
       const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const dist = Math.abs(cardCenter - stripCenter);
-      if (dist < bestDist) { bestDist = dist; activeIndex = i; }
+      const dist = cardCenter - stripCenter;
+      const absDist = Math.abs(dist);
+      if (absDist < bestDist) { bestDist = absDist; bestIdx = i; }
+
+      if (reduceMotion) {
+        card.style.setProperty('--card-scale', '1');
+        card.style.setProperty('--card-bend', '0deg');
+        card.style.setProperty('--card-lean', '0deg');
+        return;
+      }
+      // Normalised distance: 0 at center, 1 at edge of reach (clamped).
+      const t = Math.min(absDist / reach, 1);
+      const signed = Math.max(-1, Math.min(1, dist / reach));
+      // Scale: 1.08 at center → 1.0 at edge (ease-out).
+      const scale = 1 + 0.08 * (1 - t) * (1 - t);
+      // Bend: rotateY proportional to signed clamped distance, ±14deg max.
+      const bend = signed * 14;
+      card.style.setProperty('--card-scale', scale.toFixed(4));
+      card.style.setProperty('--card-bend', `${bend.toFixed(2)}deg`);
+      card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
     });
 
-    current.textContent = String(activeIndex + 1).padStart(2, '0');
-    cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
+    if (bestIdx !== activeIndex) {
+      activeIndex = bestIdx;
+      current.textContent = String(activeIndex + 1).padStart(2, '0');
+      cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
+      // Subtle haptic on the centered card change. Android only; iOS/desktop no-op.
+      if (!reduceMotion && Math.abs(instantVelocity) < 1.5) navigator.vibrate?.(6);
+    }
   }
 
-  strip.addEventListener('scroll', update, { passive: true });
-  window.addEventListener('resize', update);
+  function onScroll() {
+    if (!scrolling) {
+      scrolling = true;
+      strip.classList.add('is-scrolling');
+    }
+    clearTimeout(scrollSettleTimer);
+    scrollSettleTimer = setTimeout(() => {
+      scrolling = false;
+      strip.classList.remove('is-scrolling');
+      // One last update with zero velocity so the lean relaxes.
+      lean = 0;
+      schedule();
+    }, 120);
+    schedule();
+  }
+
+  function schedule() {
+    if (rafId) return;
+    rafId = requestAnimationFrame(update);
+  }
+
+  strip.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', schedule);
   update();
 }
