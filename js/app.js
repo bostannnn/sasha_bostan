@@ -237,7 +237,6 @@ function initAll() {
   initScrollReveal();
   initCoverVideos();
   initDragScroll();
-  initWheelGlide();
   initStripProgress();
   initBadgeSway();
 }
@@ -520,29 +519,6 @@ function initDragScroll() {
   el.addEventListener('touchstart', stopInertia, { passive: true });
 }
 
-// Every wheel event over the strip drives horizontal scroll. The strip
-// is a horizontal element — letting native direction-locking decide
-// between deltaX and deltaY produced the "sometimes scrolls, sometimes
-// doesn't" inconsistency: a slightly vertical swipe would get locked
-// into vertical and ignore its real deltaX content. We always route
-// the dominant axis to scrollLeft.
-//
-// We don't lerp / smooth / target. OS-level momentum is already in the
-// decaying wheel-event series that macOS dispatches after a fling, so
-// the scroll inherits the native curve for free. Re-implementing
-// momentum on top was what made the previous version feel choppy.
-function initWheelGlide() {
-  const el = document.getElementById('strip');
-  if (!el) return;
-  el.addEventListener('wheel', e => {
-    const absX = Math.abs(e.deltaX);
-    const absY = Math.abs(e.deltaY);
-    if (absX === 0 && absY === 0) return;
-    e.preventDefault();
-    el.scrollLeft += absY > absX ? e.deltaY : e.deltaX;
-  }, { passive: false });
-}
-
 function initStripProgress() {
   const strip = document.getElementById('strip');
   const progress = document.getElementById('stripProgress');
@@ -588,42 +564,31 @@ function initStripProgress() {
 
     // Focal X: the cursor (when it's hovering the strip) or the strip
     // center otherwise. The closest card to focusX becomes "the main".
+    // Pick the focal card: closest to mouse cursor (when hovering the
+    // strip) or to the strip's viewport center otherwise.
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
     const focusX = pointerX !== null ? pointerX : stripCenter;
-    const reach = strip.clientWidth * 0.5; // distance over which bend/scale fade out
     let bestIdx = 0;
     let bestDist = Infinity;
-
     cards.forEach((card, i) => {
       const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const dist = cardCenter - focusX;
-      const absDist = Math.abs(dist);
-      if (absDist < bestDist) { bestDist = absDist; bestIdx = i; }
+      const d = Math.abs(cardCenter - focusX);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    });
 
-      if (reduceMotion) {
-        card.style.setProperty('--card-focus', '0');
-        card.style.setProperty('--card-bend-signed', '0');
-        card.style.setProperty('--card-lean', '0deg');
-        return;
-      }
-      // Normalised distance: 0 at center, 1 at edge of reach (clamped).
-      const t = Math.min(absDist / reach, 1);
-      const signed = Math.max(-1, Math.min(1, dist / reach));
-      // Focus factor 0..1: 1 at center, 0 at edge (ease-out). CSS multiplies
-      // this by --scale-amp / --bend-amp so the same JS works on desktop
-      // and mobile with different amplitudes via media query.
-      const focus = (1 - t) * (1 - t);
-      card.style.setProperty('--card-focus', focus.toFixed(4));
-      card.style.setProperty('--card-bend-signed', signed.toFixed(4));
-      card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
+    // Binary focus: only the focal card scales up. Everything else stays
+    // at neutral size. Lean (scroll velocity) is applied uniformly to all
+    // cards so the strip leans together without changing relative sizing.
+    cards.forEach((card, i) => {
+      const focus = !reduceMotion && i === bestIdx ? 1 : 0;
+      card.style.setProperty('--card-focus', String(focus));
+      card.style.setProperty('--card-lean', reduceMotion ? '0deg' : `${leanDeg.toFixed(2)}deg`);
     });
 
     if (bestIdx !== activeIndex) {
       activeIndex = bestIdx;
       current.textContent = String(activeIndex + 1).padStart(2, '0');
       cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
-      // Haptic only on touch devices — mouse-driven focus changes would
-      // buzz every time the user moved their cursor across a card.
       if (!reduceMotion && !pointerFine) navigator.vibrate?.(6);
     }
   }
