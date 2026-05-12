@@ -580,30 +580,52 @@ function initStripProgress() {
 
     // Focal X: the cursor (when it's hovering the strip) or the strip
     // center otherwise. The closest card to focusX becomes "the main".
-    // Pick the focal card: closest to mouse cursor (when hovering the
-    // strip) or to the strip's viewport center otherwise.
+    // Decide whether a card should be focal at all:
+    //   - touch devices: yes, focal = card closest to strip center
+    //   - desktop, mouse over strip: yes, focal = card closest to pointer
+    //   - desktop, mouse NOT over strip: no focal card — all the same size
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
-    const focusX = pointerX !== null ? pointerX : stripCenter;
-    let bestIdx = 0;
-    let bestDist = Infinity;
+    let bestIdx = -1;
+    if (pointerFine && pointerX !== null) {
+      // Desktop with pointer over the strip.
+      let bestDist = Infinity;
+      cards.forEach((card, i) => {
+        const c = card.offsetLeft + card.offsetWidth / 2;
+        const d = Math.abs(c - pointerX);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      });
+    } else if (!pointerFine) {
+      // Touch: focal follows the scroll viewport center.
+      let bestDist = Infinity;
+      cards.forEach((card, i) => {
+        const c = card.offsetLeft + card.offsetWidth / 2;
+        const d = Math.abs(c - stripCenter);
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      });
+    }
+    // Counter still tracks the visually-centered card so it always reflects
+    // where the strip is — independent of whether a focal card exists.
+    let centeredIdx = 0;
+    let centeredDist = Infinity;
     cards.forEach((card, i) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const d = Math.abs(cardCenter - focusX);
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
+      const c = card.offsetLeft + card.offsetWidth / 2;
+      const d = Math.abs(c - stripCenter);
+      if (d < centeredDist) { centeredDist = d; centeredIdx = i; }
     });
 
-    // Binary focus: only the focal card scales up. Everything else stays
-    // at neutral size. Lean (scroll velocity) is applied uniformly to all
-    // cards so the strip leans together without changing relative sizing.
+    // Binary focus: only the focal card scales up. Lean is applied to
+    // every card uniformly so the strip tilts together.
     cards.forEach((card, i) => {
       const focus = !reduceMotion && i === bestIdx ? 1 : 0;
       card.style.setProperty('--card-focus', String(focus));
       card.style.setProperty('--card-lean', reduceMotion ? '0deg' : `${leanDeg.toFixed(2)}deg`);
     });
 
-    if (bestIdx !== activeIndex) {
-      activeIndex = bestIdx;
+    if (centeredIdx !== activeIndex) {
+      activeIndex = centeredIdx;
       current.textContent = String(activeIndex + 1).padStart(2, '0');
+      // is-active drives the touch-only outline border. On desktop it is
+      // harmless because the hover :hover state owns the outline instead.
       cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
       if (!reduceMotion && !pointerFine) navigator.vibrate?.(6);
     }

@@ -111,11 +111,6 @@
        focal card when it scales up; top stays tight. */
     padding: 0.5rem 2.5rem 6rem;
     overflow-x: auto;
-    overflow-y: hidden;
-    /* Lock touch gestures to horizontal panning so iOS doesn't rubber-band
-       the strip vertically when the user drags. */
-    touch-action: pan-x;
-    overscroll-behavior-y: none;
     scroll-snap-type: x proximity;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
@@ -271,6 +266,15 @@
     .project-card.is-active .project-thumb {
       outline-width: 6px;
       outline-offset: 2px;
+    }
+    /* iOS-only: lock touch gestures to horizontal panning + suppress
+       vertical rubber-banding on the strip. Applying these on desktop
+       broke trackpad horizontal swipes because Safari's direction-lock
+       fallback couldn't find a vertical scroll path. */
+    .projects-strip {
+      overflow-y: hidden;
+      touch-action: pan-x;
+      overscroll-behavior-y: none;
     }
   }
   .project-thumb img,
