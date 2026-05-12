@@ -543,16 +543,13 @@ function initWheelGlide() {
       active = false;
       return;
     }
-    // Lerp at ~15%/frame — closes the gap geometrically, so big flings
-    // glide for noticeably longer than small ticks (~0.5s tail).
-    el.scrollLeft += diff * Math.min(0.15 * (dt / 16), 0.4);
+    // Slow lerp (~9%/frame) — closes the gap geometrically over ~0.8s,
+    // smoothing wheel-event bursts and giving a long-tail glide.
+    el.scrollLeft += diff * Math.min(0.09 * (dt / 16), 0.3);
     raf = requestAnimationFrame(tick);
   }
 
   el.addEventListener('wheel', e => {
-    // Use whichever axis dominates. Mouse-wheel users send pure deltaY;
-    // trackpad horizontal-swipe sends deltaX; mac trackpad vertical
-    // sends deltaY which we remap to horizontal scroll for this strip.
     const ax = Math.abs(e.deltaX);
     const ay = Math.abs(e.deltaY);
     const delta = ax > ay ? e.deltaX : e.deltaY;
@@ -562,7 +559,10 @@ function initWheelGlide() {
       target = el.scrollLeft;
       active = true;
     }
-    target += delta * 1.6;
+    // OS momentum is already baked into trackpad wheel events — gain just
+    // bridges between event delta units and scroll px. 0.7 lets the OS
+    // curve dominate instead of doubling it.
+    target += delta * 0.7;
     const maxScroll = el.scrollWidth - el.clientWidth;
     if (target < 0) target = 0;
     else if (target > maxScroll) target = maxScroll;

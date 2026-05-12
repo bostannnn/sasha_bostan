@@ -182,12 +182,16 @@
        only — overflow-x: auto on the strip clips top overflow,
        which was cutting the scaled card. */
     transform-origin: 50% 0%;
-    transition: transform 0.4s var(--ease-out);
+    /* Single moderate ease for all transform changes — scale-up,
+       bend, lean, hover-tilt all smooth through this. ~0.3s reads
+       as natural inertia when scrolling and as graceful settle
+       when stopping, without the property-mid-flight hazard a
+       dual-duration setup creates. */
+    transition: transform 0.32s var(--ease-out);
     will-change: transform;
   }
-  .project-card.is-dragging,
-  .projects-strip.is-scrolling .project-card {
-    /* While interacting, let JS drive transform without smoothing. */
+  .project-card.is-dragging {
+    /* Drag bypasses transitions entirely — direct cursor → scroll feedback. */
     transition: none;
   }
   @media (prefers-reduced-motion: reduce) {
