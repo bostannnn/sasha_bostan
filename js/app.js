@@ -237,7 +237,6 @@ function initAll() {
   initScrollReveal();
   initCoverVideos();
   initDragScroll();
-  initWheelToHorizontal();
   initStripProgress();
   initBadgeSway();
 }
@@ -451,88 +450,32 @@ function initBadgeSway() {
 
 // ── DRAG TO SCROLL ───────────────────────────────────────────
 
+// Click-and-drag horizontal scroll for mouse users. No inertia — release
+// stops the scroll cold. Custom rAF loops modifying scrollLeft were
+// fighting native scroll input, so we keep this strictly synchronous
+// with mouse events.
 function initDragScroll() {
   const el = document.getElementById('strip');
   if (!el) return;
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   let down = false, startX, startScrollLeft;
-  // velocity is in scrollLeft-px/ms — signed, so sign carries direction.
-  let lastT = 0, velocity = 0;
-  let inertiaRaf = 0;
-
-  function stopInertia() {
-    if (inertiaRaf) cancelAnimationFrame(inertiaRaf);
-    inertiaRaf = 0;
-    velocity = 0;
-  }
-
-  function startInertia() {
-    if (reduceMotion || Math.abs(velocity) < 0.005) return;
-    let last = performance.now();
-    const tick = now => {
-      const dt = Math.min(now - last, 32);
-      last = now;
-      el.scrollLeft += velocity * dt;
-      // Slower decay → longer glide. 0.965 per 16ms ≈ ~1.5–2s of motion
-      // from a vigorous fling, instead of ~0.6s before.
-      velocity *= Math.pow(0.965, dt / 16);
-      if (Math.abs(velocity) > 0.005) {
-        inertiaRaf = requestAnimationFrame(tick);
-      } else {
-        inertiaRaf = 0;
-        velocity = 0;
-      }
-    };
-    inertiaRaf = requestAnimationFrame(tick);
-  }
-
   el.addEventListener('mousedown', e => {
-    stopInertia();
     down = true;
     el.classList.add('is-dragging');
     startX = e.pageX;
     startScrollLeft = el.scrollLeft;
-    lastT = performance.now();
-    velocity = 0;
   });
   el.addEventListener('mousemove', e => {
     if (!down) return;
     e.preventDefault();
-    const now = performance.now();
-    const dt = Math.max(now - lastT, 1);
-    const prevScrollLeft = el.scrollLeft;
     el.scrollLeft = startScrollLeft - (e.pageX - startX) * 1.4;
-    // Track actual scroll delta so the inertia inherits the 1.4× drag
-    // multiplier and the correct direction automatically.
-    velocity = (el.scrollLeft - prevScrollLeft) / dt;
-    lastT = now;
   });
   const release = () => {
     if (!down) return;
     down = false;
     el.classList.remove('is-dragging');
-    startInertia();
   };
   el.addEventListener('mouseup', release);
   el.addEventListener('mouseleave', release);
-  el.addEventListener('wheel', stopInertia, { passive: true });
-  el.addEventListener('touchstart', stopInertia, { passive: true });
-}
-
-// Map pure-vertical mouse-wheel ticks (deltaY only, no deltaX) onto
-// horizontal scrollLeft so users on a regular mouse can browse the strip.
-// Trackpad gestures carry deltaX and are left alone — native browser
-// scrolling handles them.
-function initWheelToHorizontal() {
-  const el = document.getElementById('strip');
-  if (!el) return;
-  el.addEventListener('wheel', e => {
-    if (e.deltaX !== 0) return;
-    if (e.deltaY === 0) return;
-    e.preventDefault();
-    el.scrollLeft += e.deltaY;
-  }, { passive: false });
 }
 
 function initStripProgress() {
@@ -548,16 +491,10 @@ function initStripProgress() {
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pointerFine = matchMedia('(pointer: fine)').matches;
 
-  // Scroll velocity tracking — drives the "lean" effect.
-  let lastScrollLeft = strip.scrollLeft;
-  let lastT = performance.now();
-  let lean = 0;
   let activeIndex = -1;
-  let scrolling = false;
-  let scrollSettleTimer = 0;
   let rafId = 0;
-  // Pointer X in scroll-content space. When non-null, the focal card
-  // (scale-up + bend-pivot) follows the cursor instead of strip center.
+  // Pointer X in scroll-content space. Null when cursor is not over the
+  // strip (desktop) — in which case no card is focal on desktop.
   let pointerX = null;
 
   function update() {
@@ -567,44 +504,28 @@ function initStripProgress() {
     const ratio = Math.min(Math.max(strip.scrollLeft / maxScroll, 0), 1);
     progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
 
-    // Velocity in px/ms (decayed so a single scroll pulse doesn't linger).
-    const now = performance.now();
-    const dt = Math.max(now - lastT, 1);
-    const dx = strip.scrollLeft - lastScrollLeft;
-    const instantVelocity = dx / dt;
-    lastScrollLeft = strip.scrollLeft;
-    lastT = now;
-    lean = lean * 0.7 + instantVelocity * 0.3;
-    // Clamp lean to a tasteful range (max ±2deg).
-    const leanDeg = Math.max(-2, Math.min(2, lean * -0.6));
-
-    // Focal X: the cursor (when it's hovering the strip) or the strip
-    // center otherwise. The closest card to focusX becomes "the main".
-    // Decide whether a card should be focal at all:
-    //   - touch devices: yes, focal = card closest to strip center
-    //   - desktop, mouse over strip: yes, focal = card closest to pointer
-    //   - desktop, mouse NOT over strip: no focal card — all the same size
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
-    let bestIdx = -1;
+
+    // Focal card: on desktop only when pointer is over the strip;
+    // on touch always (follows viewport center).
+    let focalIdx = -1;
     if (pointerFine && pointerX !== null) {
-      // Desktop with pointer over the strip.
-      let bestDist = Infinity;
+      let best = Infinity;
       cards.forEach((card, i) => {
         const c = card.offsetLeft + card.offsetWidth / 2;
         const d = Math.abs(c - pointerX);
-        if (d < bestDist) { bestDist = d; bestIdx = i; }
+        if (d < best) { best = d; focalIdx = i; }
       });
     } else if (!pointerFine) {
-      // Touch: focal follows the scroll viewport center.
-      let bestDist = Infinity;
+      let best = Infinity;
       cards.forEach((card, i) => {
         const c = card.offsetLeft + card.offsetWidth / 2;
         const d = Math.abs(c - stripCenter);
-        if (d < bestDist) { bestDist = d; bestIdx = i; }
+        if (d < best) { best = d; focalIdx = i; }
       });
     }
-    // Counter still tracks the visually-centered card so it always reflects
-    // where the strip is — independent of whether a focal card exists.
+
+    // Counter tracks the visually-centered card regardless of focus state.
     let centeredIdx = 0;
     let centeredDist = Infinity;
     cards.forEach((card, i) => {
@@ -613,38 +534,17 @@ function initStripProgress() {
       if (d < centeredDist) { centeredDist = d; centeredIdx = i; }
     });
 
-    // Binary focus: only the focal card scales up. Lean is applied to
-    // every card uniformly so the strip tilts together.
+    // Binary focal scale only. No lean, no bend.
     cards.forEach((card, i) => {
-      const focus = !reduceMotion && i === bestIdx ? 1 : 0;
-      card.style.setProperty('--card-focus', String(focus));
-      card.style.setProperty('--card-lean', reduceMotion ? '0deg' : `${leanDeg.toFixed(2)}deg`);
+      card.style.setProperty('--card-focus', !reduceMotion && i === focalIdx ? '1' : '0');
     });
 
     if (centeredIdx !== activeIndex) {
       activeIndex = centeredIdx;
       current.textContent = String(activeIndex + 1).padStart(2, '0');
-      // is-active drives the touch-only outline border. On desktop it is
-      // harmless because the hover :hover state owns the outline instead.
       cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
       if (!reduceMotion && !pointerFine) navigator.vibrate?.(6);
     }
-  }
-
-  function onScroll() {
-    if (!scrolling) {
-      scrolling = true;
-      strip.classList.add('is-scrolling');
-    }
-    clearTimeout(scrollSettleTimer);
-    scrollSettleTimer = setTimeout(() => {
-      scrolling = false;
-      strip.classList.remove('is-scrolling');
-      // One last update with zero velocity so the lean relaxes.
-      lean = 0;
-      schedule();
-    }, 120);
-    schedule();
   }
 
   function schedule() {
@@ -652,12 +552,9 @@ function initStripProgress() {
     rafId = requestAnimationFrame(update);
   }
 
-  strip.addEventListener('scroll', onScroll, { passive: true });
+  strip.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
 
-  // Mouse-driven focus: only on devices with a fine pointer (mouse / trackpad).
-  // During a drag the cursor is following a moving viewport, so we freeze
-  // tracking and let strip-center take over until the drag releases.
   if (pointerFine && !reduceMotion) {
     strip.addEventListener('mousemove', e => {
       if (strip.classList.contains('is-dragging')) return;

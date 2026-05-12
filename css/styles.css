@@ -111,7 +111,6 @@
        focal card when it scales up; top stays tight. */
     padding: 0.5rem 2.5rem 6rem;
     overflow-x: auto;
-    scroll-snap-type: x proximity;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
     /* Soft fade at strip edges so cards melt in/out instead of hard-cropping. */
@@ -120,7 +119,6 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .projects-strip {
-      scroll-snap-type: none;
       mask: none;
       -webkit-mask: none;
     }
@@ -165,19 +163,16 @@
     padding: 1.6rem 2rem 0;
     cursor: pointer;
     isolation: isolate;
-    scroll-snap-align: center;
     /* Composable transform — each animation writes one variable instead of
        overwriting the whole transform. Stays at neutral when JS is off. */
     --tilt-x: 0deg;
     --tilt-y: 0deg;
     /* Binary focal flag from JS: 1 on the focused card, 0 on the rest. */
     --card-focus: 0;
-    --card-lean: 0deg;
     --scale-amp: 0.14; /* desktop amplitude — mobile media query lowers it. */
     transform:
       rotateX(var(--tilt-x))
       rotateY(var(--tilt-y))
-      rotateZ(var(--card-lean))
       scale(calc(1 + var(--card-focus) * var(--scale-amp)));
     /* Anchor scaling at the top so the focal card grows downward
        only — overflow-x: auto on the strip clips top overflow,
