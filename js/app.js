@@ -237,6 +237,7 @@ function initAll() {
   initScrollReveal();
   initCoverVideos();
   initDragScroll();
+  initWheelToHorizontal();
   initStripProgress();
   initBadgeSway();
 }
@@ -517,6 +518,21 @@ function initDragScroll() {
   el.addEventListener('mouseleave', release);
   el.addEventListener('wheel', stopInertia, { passive: true });
   el.addEventListener('touchstart', stopInertia, { passive: true });
+}
+
+// Map pure-vertical mouse-wheel ticks (deltaY only, no deltaX) onto
+// horizontal scrollLeft so users on a regular mouse can browse the strip.
+// Trackpad gestures carry deltaX and are left alone — native browser
+// scrolling handles them.
+function initWheelToHorizontal() {
+  const el = document.getElementById('strip');
+  if (!el) return;
+  el.addEventListener('wheel', e => {
+    if (e.deltaX !== 0) return;
+    if (e.deltaY === 0) return;
+    e.preventDefault();
+    el.scrollLeft += e.deltaY;
+  }, { passive: false });
 }
 
 function initStripProgress() {
