@@ -226,7 +226,17 @@ function openProjectFromHash() {
 window.addEventListener('popstate', openProjectFromHash);
 
 function smoothScroll(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const target = document.getElementById(id);
+  if (!target) return;
+
+  const navHeight = document.querySelector('nav')?.getBoundingClientRect().height || 0;
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: reduceMotion ? 'auto' : 'smooth',
+  });
 }
 
 function initAll() {
@@ -357,7 +367,7 @@ function initCursor() {
 
 // ── 2. CARD TILT ON HOVER ────────────────────────────────────
 // Tilt now writes to CSS variables (--tilt-x / --tilt-y) so it composes with
-// scroll-driven scale, bend, and lean instead of clobbering them.
+// scroll-driven thumb focus, bend, and lean instead of clobbering them.
 function initTilt() {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   document.querySelectorAll('.project-card').forEach(card => {
@@ -421,7 +431,7 @@ function initCoverVideos() {
 // ── 5. BADGE SWAY — smooth JS sine, lerp on hover/leave ──────
 function initBadgeSway() {
   const wrap = document.getElementById('badge-wrap');
-  if (!wrap) return;
+  if (!wrap || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   let amp   = 4,  ampT   = 4;
   let speed = 1.0, speedT = 1.0;
@@ -481,17 +491,20 @@ function initDragScroll() {
 function initStripProgress() {
   const strip = document.getElementById('strip');
   const progress = document.getElementById('stripProgress');
+  const rail = progress?.querySelector('.strip-progress-rail');
   const current = document.getElementById('stripCurrent');
   const total = document.getElementById('stripTotal');
-  if (!strip || !progress || !current || !total) return;
+  if (!strip || !progress || !rail || !current || !total) return;
 
   total.textContent = String(PROJECTS.length).padStart(2, '0');
 
   const cards = [...strip.querySelectorAll('.project-card')];
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pointerFine = matchMedia('(pointer: fine)').matches;
+  let progressMarks = [];
 
-  let activeIndex = -1;
+  let progressIndex = -1;
+  let activeCardIndex = -1;
   let rafId = 0;
   let pointerX = null;
   // Lean: smoothed scroll velocity expressed as a small rotateZ.
@@ -501,12 +514,49 @@ function initStripProgress() {
   let lean = 0;
   let settleTimer = 0;
 
+  function buildProgressMarks() {
+    const step = matchMedia('(max-width: 640px)').matches ? 7 : 11;
+    const count = Math.max(22, Math.floor(rail.clientWidth / step));
+    if (progressMarks.length === count) return;
+
+    rail.replaceChildren();
+    progressMarks = Array.from({ length: count }, (_, index) => {
+      const mark = document.createElement('span');
+      mark.className = 'strip-progress-mark';
+      mark.style.setProperty('--mark-height', 12);
+      rail.append(mark);
+      return mark;
+    });
+  }
+
+  function syncProgress(ratio) {
+    progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
+
+    if (!progressMarks.length) return;
+    const filled = ratio * progressMarks.length;
+    const rampCount = 3;
+    const lastMarkIndex = Math.max(progressMarks.length - 1, 1);
+    progressMarks.forEach((mark, index) => {
+      const markFill = Math.min(Math.max(filled - index, 0), 1);
+      const phase = ((index / lastMarkIndex) * rampCount) % 1;
+      const ramp = Math.sin(phase * Math.PI);
+      mark.style.setProperty('--mark-fill', markFill.toFixed(3));
+      mark.style.setProperty('--mark-height', (12 + markFill * ramp * 8).toFixed(2));
+    });
+  }
+
+  function syncProgressVisibility() {
+    const rect = strip.getBoundingClientRect();
+    const isProjectStripVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+    progress.classList.toggle('is-outside-projects', !isProjectStripVisible);
+  }
+
   function update() {
     rafId = 0;
 
     const maxScroll = Math.max(strip.scrollWidth - strip.clientWidth, 1);
     const ratio = Math.min(Math.max(strip.scrollLeft / maxScroll, 0), 1);
-    progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
+    syncProgressVisibility();
 
     // Velocity (px/ms). Exponential smoothing keeps it from spiking from
     // a single high-delta scroll event. Clamped to ±2° for taste.
@@ -517,6 +567,7 @@ function initStripProgress() {
     lastT = now;
     lean = lean * 0.7 + (dx / dt) * 0.3;
     const leanDeg = reduceMotion ? 0 : Math.max(-2, Math.min(2, lean * -0.6));
+    syncProgress(ratio);
 
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
 
@@ -550,10 +601,15 @@ function initStripProgress() {
       card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
     });
 
-    if (centeredIdx !== activeIndex) {
-      activeIndex = centeredIdx;
-      current.textContent = String(activeIndex + 1).padStart(2, '0');
-      cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
+    const nextProgressIndex = Math.min(cards.length - 1, Math.max(0, Math.round(ratio * (cards.length - 1))));
+    if (nextProgressIndex !== progressIndex) {
+      progressIndex = nextProgressIndex;
+      current.textContent = String(progressIndex + 1).padStart(2, '0');
+    }
+
+    if (centeredIdx !== activeCardIndex) {
+      activeCardIndex = centeredIdx;
+      cards.forEach((card, i) => card.classList.toggle('is-active', i === activeCardIndex));
       if (!reduceMotion && !pointerFine) navigator.vibrate?.(6);
     }
   }
@@ -567,11 +623,19 @@ function initStripProgress() {
     schedule();
     // After scroll stops, relax lean back to 0 so cards return to upright.
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(() => { lean = 0; schedule(); }, 140);
+    settleTimer = setTimeout(() => {
+      lean = 0;
+      schedule();
+    }, 140);
   }
 
   strip.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', schedule);
+  window.addEventListener('scroll', syncProgressVisibility, { passive: true });
+  window.addEventListener('resize', () => {
+    buildProgressMarks();
+    syncProgressVisibility();
+    schedule();
+  });
 
   if (pointerFine && !reduceMotion) {
     strip.addEventListener('mousemove', e => {
@@ -586,5 +650,7 @@ function initStripProgress() {
     });
   }
 
+  buildProgressMarks();
+  syncProgressVisibility();
   update();
 }

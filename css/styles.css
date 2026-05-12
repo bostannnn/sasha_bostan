@@ -17,9 +17,16 @@
     --sans: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --nav-height: 4.5rem;
+    --projects-rhythm: 18px;
+    --project-thumb-height: clamp(330px, 60vh, 510px);
+    --project-strip-bottom-safe: clamp(3.25rem, 5vh, 4rem);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: var(--green); }
+  html {
+    background: var(--green);
+    scroll-padding-top: calc(var(--nav-height) + 1rem);
+  }
   body {
     font-family: var(--sans);
     background-color: var(--paper);
@@ -38,16 +45,18 @@
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
+    gap: 1.5rem;
+    min-height: var(--nav-height);
     padding: 1.25rem 2.5rem;
     background: rgba(243,241,233,0.78);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
     animation: fadeIn 0.5s ease both;
   }
-  .nav-identity { display: flex; align-items: baseline; gap: 0.7rem; }
+  .nav-identity { display: flex; align-items: baseline; gap: 0.7rem; flex: 0 0 auto; min-width: 0; }
   .nav-name { font-family: var(--serif); font-size: 1rem; font-weight: 400; color: var(--ink); text-decoration: none; letter-spacing: 0.01em; }
   .nav-role { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); }
-  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; flex: 0 1 auto; min-width: 0; }
   .nav-links a {
     position: relative;
     display: inline-flex;
@@ -104,12 +113,22 @@
   }
   .nav-links a[aria-current="true"] { color: var(--ink); }
 
-  .projects-section { position: relative; padding-top: 4.5rem; perspective: 1400px; }
+  #projects,
+  #about,
+  #contact {
+    scroll-margin-top: calc(var(--nav-height) + 1rem);
+  }
+
+  .projects-section {
+    position: relative;
+    min-height: 100svh;
+    padding-top: calc(var(--nav-height) + var(--projects-rhythm));
+    perspective: 1400px;
+  }
   .projects-strip {
     display: flex; gap: 0.35rem;
-    /* Generous bottom padding absorbs the downward growth of the
-       focal card when it scales up; top stays tight. */
-    padding: 0.5rem 2.5rem 6rem;
+    /* Bottom padding is the card safe zone: scaled thumb, title, shadow, rail. */
+    padding: var(--projects-rhythm) 2.5rem var(--project-strip-bottom-safe);
     overflow-x: auto;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
@@ -127,31 +146,64 @@
   .projects-strip::-webkit-scrollbar { display: none; }
   .strip-progress {
     --scroll-progress: 0;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: min(calc(var(--nav-height) + 50px + var(--project-thumb-height) + 9rem), calc(100svh - 5rem));
+    z-index: 3;
     display: grid;
-    grid-template-columns: auto minmax(120px, 320px) auto;
+    grid-template-columns: auto minmax(180px, min(52vw, 680px)) auto;
     align-items: center;
-    gap: 0.85rem;
-    padding: 0 2.5rem 2rem;
-    color: var(--ink-light);
+    justify-content: center;
+    gap: 1.35rem;
+    padding: 0 clamp(1.25rem, 3.4vw, 2.5rem);
+    color: rgba(32,32,26,0.54);
     font-size: 0.68rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    animation: fadeIn 1s 0.9s both;
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease-out), visibility 0.2s var(--ease-out);
+    animation: none;
+  }
+  .strip-progress.is-outside-projects {
+    opacity: 0 !important;
+    visibility: hidden;
   }
   .strip-progress-rail {
     position: relative;
-    height: 1px;
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(0.28rem, 0.64vw, 0.56rem);
+    width: 100%;
+    min-width: 0;
+    height: 2.15rem;
     overflow: hidden;
-    background: rgba(28,36,22,0.14);
+    background:
+      repeating-linear-gradient(
+        to right,
+        rgba(32,32,26,0.24) 0 2px,
+        transparent 2px 14px
+      ) left bottom / 100% 0.8rem no-repeat;
   }
-  .strip-progress-rail::after {
+  .strip-progress-mark {
+    position: relative;
+    flex: 0 0 2px;
+    height: calc(var(--mark-height, 12) * 1px);
+    min-height: 0.65rem;
+    transition: height 0.22s var(--ease-out);
+  }
+  .strip-progress-mark::before,
+  .strip-progress-mark::after {
     content: '';
     position: absolute;
     inset: 0;
+    border-radius: 999px;
+  }
+  .strip-progress-mark::before { background: rgba(32,32,26,0.22); }
+  .strip-progress-mark::after {
     background: var(--ink);
-    transform: scaleX(var(--scroll-progress));
-    transform-origin: left;
-    transition: transform 0.08s linear;
+    opacity: var(--mark-fill, 0);
+    transition: opacity 0.16s var(--ease-out);
   }
   .strip-progress-text,
   .strip-progress-total { white-space: nowrap; }
@@ -160,7 +212,7 @@
     position: relative;
     flex: 0 0 auto;
     width: clamp(240px, 24vw, 340px);
-    padding: 1.6rem 2rem 0;
+    padding: 0 2rem 0;
     cursor: pointer;
     isolation: isolate;
     /* Composable transform — each animation writes one variable instead of
@@ -171,18 +223,13 @@
     --card-focus: 0;
     /* Strip-velocity-driven tilt (±2° max), uniform across all cards. */
     --card-lean: 0deg;
-    --scale-amp: 0.14; /* desktop amplitude — mobile media query lowers it. */
+    --scale-amp: 0.07; /* desktop amplitude — mobile media query lowers it. */
     transform:
       rotateX(var(--tilt-x))
       rotateY(var(--tilt-y))
-      rotateZ(var(--card-lean))
-      scale(calc(1 + var(--card-focus) * var(--scale-amp)));
-    /* Anchor scaling at the top so the focal card grows downward
-       only — overflow-x: auto on the strip clips top overflow,
-       which was cutting the scaled card. */
+      rotateZ(var(--card-lean));
     transform-origin: 50% 0%;
-    /* Single moderate ease for all transform changes — scale-up,
-       bend, lean, hover-tilt all smooth through this. ~0.3s reads
+    /* Single moderate ease for card bend, lean, and hover-tilt. ~0.3s reads
        as natural inertia when scrolling and as graceful settle
        when stopping, without the property-mid-flight hazard a
        dual-duration setup creates. */
@@ -205,7 +252,7 @@
     left: 0;
     top: 0;
     width: 100%;
-    height: calc(clamp(330px, 60vh, 510px) + 3.2rem);
+    height: calc(var(--project-thumb-height) + 3.2rem);
     background-image:
       url('../assets/pen/border-top-left.png'),
       url('../assets/pen/border-top.png'),
@@ -241,38 +288,60 @@
   }
   */
   .project-card:hover,
-  .project-card:focus-visible {
+  .project-card:focus-visible,
+  .project-card.is-active {
     z-index: 5;
   }
 
   /* Single uniform height — no nth-child alternation */
   .project-thumb {
     position: relative; width: 100%;
-    height: clamp(330px, 60vh, 510px);
+    height: var(--project-thumb-height);
+    margin-bottom: clamp(3rem, 6vh, 4rem);
     overflow: hidden; border-radius: 6px; background: var(--bg-card);
     z-index: 1;
     outline: 0 solid var(--green);
     outline-offset: 0;
-    transition: outline-width 0.24s var(--ease-out), outline-offset 0.24s var(--ease-out);
+    transform: scale(calc(1 + var(--card-focus) * var(--scale-amp)));
+    transform-origin: 50% 0%;
+    box-shadow:
+      0 14px 30px rgba(28,36,22,0.2),
+      0 6px 14px rgba(28,36,22,0.11),
+      0 2px 0 rgba(255,255,255,0.44) inset,
+      inset 0 1px 0 rgba(255,255,255,0.24);
+    transition:
+      transform 0.32s var(--ease-out),
+      outline-width 0.24s var(--ease-out),
+      outline-offset 0.24s var(--ease-out),
+      box-shadow 0.28s var(--ease-out);
   }
   .project-card:hover .project-thumb,
   .project-card:focus-visible .project-thumb {
-    outline-width: 6px;
+    outline-width: 5px;
     outline-offset: 2px;
+    box-shadow:
+      0 16px 36px rgba(28,36,22,0.24),
+      0 8px 18px rgba(28,36,22,0.13),
+      0 2px 0 rgba(255,255,255,0.48) inset,
+      inset 0 1px 0 rgba(255,255,255,0.28);
   }
   @media (hover: none) {
     .project-card.is-active .project-thumb {
-      outline-width: 6px;
+      outline-width: 5px;
       outline-offset: 2px;
+      box-shadow:
+        0 16px 36px rgba(28,36,22,0.23),
+        0 8px 18px rgba(28,36,22,0.13),
+        0 2px 0 rgba(255,255,255,0.46) inset,
+        inset 0 1px 0 rgba(255,255,255,0.26);
     }
-    /* iOS-only: lock touch gestures to horizontal panning + suppress
-       vertical rubber-banding on the strip. Applying these on desktop
-       broke trackpad horizontal swipes because Safari's direction-lock
-       fallback couldn't find a vertical scroll path. */
+    /* iOS-only: suppress vertical rubber-banding on the strip but
+       still let vertical swipes propagate up so the user can scroll
+       the page (to О себе / Контакты) by swiping anywhere — including
+       over the strip. overflow-y: hidden alone removes the rubber-band
+       since there's no vertical scroll axis to bounce. */
     .projects-strip {
       overflow-y: hidden;
-      touch-action: pan-x;
-      overscroll-behavior-y: none;
     }
   }
   .project-thumb img,
@@ -300,7 +369,7 @@
   .project-meta {
     position: relative;
     z-index: 2;
-    padding: 0.75rem 0.1rem 0;
+    padding: 0 0.1rem;
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -312,7 +381,18 @@
   .project-name { font-family: var(--serif); font-size: 0.98rem; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
   .project-year { font-size: 0.7rem; color: var(--ink-light); letter-spacing: 0.07em; white-space: nowrap; }
 
-  .scroll-hint { padding: 0 2.5rem; display: flex; align-items: center; gap: 0.75rem; color: var(--ink-light); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; animation: fadeIn 1s 0.8s both; }
+  .scroll-hint {
+    padding: 0 2.5rem;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(32,32,26,0.44);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: fadeIn 1s 0.8s both;
+  }
   .scroll-line { flex: 0 0 36px; height: 1px; background: var(--ink-light); }
   .section-divider { margin: 0 2.5rem; height: 1px; background: var(--border); }
 
@@ -321,7 +401,15 @@
   .about-text-block { padding-top: 5.5rem; } /* lanyard height + badge header, so headline = top of photo */
   .about-bio { font-size: 0.95rem; line-height: 1.8; color: var(--ink-mid); margin-bottom: 1.25rem; }
 
-  .contact-section { padding: 5rem 2.5rem; background: var(--green); border-radius: 12px 12px 0 0; position: relative; }
+  .contact-section {
+    display: flex;
+    align-items: center;
+    min-height: clamp(320px, 52vh, 560px);
+    padding: 5rem 2.5rem;
+    background: var(--green);
+    border-radius: 12px 12px 0 0;
+    position: relative;
+  }
 
   #naruto-wrap {
     position: relative;
@@ -353,7 +441,7 @@
     from { background-position-x: 0; }
     to   { background-position-x: -594px; }
   }
-  .contact-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+  .contact-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; width: 100%; }
   .contact-heading { font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.8rem); font-weight: 400; line-height: 1.05; letter-spacing: -0.02em; color: var(--cream); }
   .contact-heading em { font-style: italic; color: rgba(240,234,216,0.45); }
   .contact-links { display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem; }
@@ -636,18 +724,26 @@
     justify-content: space-between;
     gap: 1rem;
     color: rgba(240,234,216,0.72);
+    min-width: 0;
+    flex-shrink: 0;
   }
   .media-viewer-title {
     display: flex;
     align-items: baseline;
     gap: 0.8rem;
+    flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
   }
   .media-viewer-title strong {
     font-family: var(--serif);
     font-size: 1rem;
     font-weight: 400;
     color: var(--cream);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .media-viewer-title span,
   .media-viewer-count {
@@ -664,6 +760,7 @@
     transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out);
   }
   .media-viewer-close {
+    flex: 0 0 40px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -849,24 +946,86 @@
   .project-thumb { transform-style: preserve-3d; }
 
   @media (max-width: 640px) {
-    nav { padding: 1rem 1.25rem; }
+    :root { --nav-height: 4.5rem; }
+    nav {
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1.25rem 0.95rem;
+    }
+    .nav-identity {
+      flex: 0 0 auto;
+      width: auto;
+    }
+    .nav-name {
+      font-size: 0.95rem;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
     .nav-role { display: none; }
-    .projects-strip { padding: 0.75rem 1.25rem 5.5rem; gap: 0.3rem; }
-    /* Softer focal effect on mobile — small screens read 1.14× as
+    .nav-links {
+      flex: 1 1 auto;
+      width: auto;
+      justify-content: flex-end;
+      gap: clamp(0.65rem, 4vw, 1.4rem);
+      margin-left: auto;
+    }
+    .nav-links a {
+      font-size: 0.64rem;
+      line-height: 1.15;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+    }
+    .projects-section { padding-top: calc(var(--nav-height) + var(--projects-rhythm)); }
+    .projects-strip { padding: var(--projects-rhythm) 1.25rem 1.75rem; gap: 0.3rem; }
+    /* Softer focal effect on mobile — larger scales read as
        layout pressure rather than visual emphasis. */
     .project-card { --scale-amp: 0.06; }
     /* 72vw wide card, 108vw tall = portrait ~3:2 — stays tall, not square */
     .project-card { width: 72vw; }
-    .project-card { padding: 1.4rem 1.6rem 0; }
+    .project-card { padding: 0 1.6rem 0; }
     .project-card::after { height: calc(108vw + 2.8rem); }
-    .project-thumb { height: 108vw; }
-    .scroll-hint { padding: 0 1.25rem; }
-    .strip-progress { grid-template-columns: auto 1fr auto; padding: 0 1.25rem 1.5rem; }
+    .project-thumb {
+      height: min(108vw, 56svh);
+      margin-bottom: clamp(3.1rem, 12vw, 3.65rem);
+    }
+    .scroll-hint { padding: 0 1.25rem; margin-bottom: 0; }
+    .strip-progress {
+      grid-template-columns: auto minmax(150px, 1fr) auto;
+      gap: 0.85rem;
+      top: min(calc(var(--nav-height) + 50px + min(108vw, 56svh) + 8.65rem), calc(100svh - 4.25rem));
+      padding: 0 1.25rem;
+    }
+    .strip-progress-rail {
+      height: 1.75rem;
+      gap: clamp(0.22rem, 1.45vw, 0.38rem);
+    }
+    .strip-progress-mark { flex-basis: 1.5px; }
     .section-divider { margin: 0 1.25rem; }
     .about-section { padding: 3.5rem 1.25rem; grid-template-columns: 1fr; gap: 2.5rem; }
     .badge-column { align-items: center; }
     .about-text-block { padding-top: 0; text-align: center; }
-    .contact-section { padding: 3.5rem 1.25rem; }
+    #naruto-wrap {
+      height: 54px;
+      margin-top: 1.25rem;
+      transform: none;
+      background: var(--green);
+    }
+    #naruto {
+      left: -74px;
+      width: 62px;
+      height: 54px;
+      background-size: 372px 54px;
+      animation: narutoRunMobile 8s linear infinite, narutoFramesMobile 0.55s steps(6) infinite;
+      mix-blend-mode: normal;
+      opacity: 0.86;
+    }
+    .contact-section {
+      align-items: flex-start;
+      min-height: clamp(340px, 50svh, 460px);
+      padding: clamp(2.75rem, 7svh, 4rem) 1.25rem 2.75rem;
+      border-radius: 0;
+    }
     .contact-inner { flex-direction: column; align-items: flex-start; }
     .contact-links { align-items: flex-start; }
     footer { padding: 1.25rem; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
@@ -889,8 +1048,57 @@
       grid-row: span 2;
     }
     .media-viewer { padding: 0.9rem; }
+    .media-viewer-top { align-items: flex-start; }
     .media-viewer-title {
       flex-direction: column;
       gap: 0.2rem;
+    }
+    .media-viewer-title strong {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      line-height: 1.2;
+    }
+  }
+
+  @media (max-width: 360px) {
+    :root { --nav-height: 4.5rem; }
+    nav { padding-inline: 1rem; }
+    .nav-name { font-size: 0.9rem; }
+    .nav-links { gap: 0.55rem; }
+    .nav-links a {
+      font-size: 0.58rem;
+      letter-spacing: 0.045em;
+    }
+    .projects-strip { padding-bottom: 1.6rem; }
+    .project-thumb { height: min(92vw, 56svh); }
+  }
+
+  @keyframes narutoRunMobile {
+    0%   { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(calc(100vw + 148px), 0, 0); }
+  }
+  @keyframes narutoFramesMobile {
+    from { background-position-x: 0; }
+    to   { background-position-x: -372px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+    #naruto {
+      animation: none;
+    }
+    .strip-progress-mark::after {
+      transition: none;
     }
   }
