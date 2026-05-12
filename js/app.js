@@ -520,21 +520,26 @@ function initDragScroll() {
   el.addEventListener('touchstart', stopInertia, { passive: true });
 }
 
-// Convert pure-vertical mouse-wheel scrolling into horizontal strip
-// scrolling. Trackpad horizontal swipes (which carry deltaX, possibly
-// with deltaY too) are LEFT ALONE so the browser/OS momentum scrolls
-// the strip natively — that curve is much smoother than anything we
-// can roll by hand without a heavy library.
+// Every wheel event over the strip drives horizontal scroll. The strip
+// is a horizontal element — letting native direction-locking decide
+// between deltaX and deltaY produced the "sometimes scrolls, sometimes
+// doesn't" inconsistency: a slightly vertical swipe would get locked
+// into vertical and ignore its real deltaX content. We always route
+// the dominant axis to scrollLeft.
+//
+// We don't lerp / smooth / target. OS-level momentum is already in the
+// decaying wheel-event series that macOS dispatches after a fling, so
+// the scroll inherits the native curve for free. Re-implementing
+// momentum on top was what made the previous version feel choppy.
 function initWheelGlide() {
   const el = document.getElementById('strip');
   if (!el) return;
   el.addEventListener('wheel', e => {
-    // If the event already has horizontal delta, let native scroll handle it.
-    if (e.deltaX !== 0) return;
-    if (e.deltaY === 0) return;
-    // Pure-vertical wheel (mouse wheel, or trackpad with shift): map to horizontal.
+    const absX = Math.abs(e.deltaX);
+    const absY = Math.abs(e.deltaY);
+    if (absX === 0 && absY === 0) return;
     e.preventDefault();
-    el.scrollLeft += e.deltaY;
+    el.scrollLeft += absY > absX ? e.deltaY : e.deltaX;
   }, { passive: false });
 }
 
