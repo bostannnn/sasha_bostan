@@ -169,10 +169,13 @@
     --tilt-y: 0deg;
     /* Binary focal flag from JS: 1 on the focused card, 0 on the rest. */
     --card-focus: 0;
+    /* Strip-velocity-driven tilt (±2° max), uniform across all cards. */
+    --card-lean: 0deg;
     --scale-amp: 0.14; /* desktop amplitude — mobile media query lowers it. */
     transform:
       rotateX(var(--tilt-x))
       rotateY(var(--tilt-y))
+      rotateZ(var(--card-lean))
       scale(calc(1 + var(--card-focus) * var(--scale-amp)));
     /* Anchor scaling at the top so the focal card grows downward
        only — overflow-x: auto on the strip clips top overflow,

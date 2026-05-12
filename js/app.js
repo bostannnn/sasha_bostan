@@ -493,9 +493,13 @@ function initStripProgress() {
 
   let activeIndex = -1;
   let rafId = 0;
-  // Pointer X in scroll-content space. Null when cursor is not over the
-  // strip (desktop) — in which case no card is focal on desktop.
   let pointerX = null;
+  // Lean: smoothed scroll velocity expressed as a small rotateZ.
+  // Reads scrollLeft only, never writes — safe alongside native scroll.
+  let lastScrollLeft = strip.scrollLeft;
+  let lastT = performance.now();
+  let lean = 0;
+  let settleTimer = 0;
 
   function update() {
     rafId = 0;
@@ -504,10 +508,18 @@ function initStripProgress() {
     const ratio = Math.min(Math.max(strip.scrollLeft / maxScroll, 0), 1);
     progress.style.setProperty('--scroll-progress', ratio.toFixed(4));
 
+    // Velocity (px/ms). Exponential smoothing keeps it from spiking from
+    // a single high-delta scroll event. Clamped to ±2° for taste.
+    const now = performance.now();
+    const dt = Math.max(now - lastT, 1);
+    const dx = strip.scrollLeft - lastScrollLeft;
+    lastScrollLeft = strip.scrollLeft;
+    lastT = now;
+    lean = lean * 0.7 + (dx / dt) * 0.3;
+    const leanDeg = reduceMotion ? 0 : Math.max(-2, Math.min(2, lean * -0.6));
+
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
 
-    // Focal card: on desktop only when pointer is over the strip;
-    // on touch always (follows viewport center).
     let focalIdx = -1;
     if (pointerFine && pointerX !== null) {
       let best = Infinity;
@@ -525,7 +537,6 @@ function initStripProgress() {
       });
     }
 
-    // Counter tracks the visually-centered card regardless of focus state.
     let centeredIdx = 0;
     let centeredDist = Infinity;
     cards.forEach((card, i) => {
@@ -534,9 +545,9 @@ function initStripProgress() {
       if (d < centeredDist) { centeredDist = d; centeredIdx = i; }
     });
 
-    // Binary focal scale only. No lean, no bend.
     cards.forEach((card, i) => {
       card.style.setProperty('--card-focus', !reduceMotion && i === focalIdx ? '1' : '0');
+      card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
     });
 
     if (centeredIdx !== activeIndex) {
@@ -552,7 +563,14 @@ function initStripProgress() {
     rafId = requestAnimationFrame(update);
   }
 
-  strip.addEventListener('scroll', schedule, { passive: true });
+  function onScroll() {
+    schedule();
+    // After scroll stops, relax lean back to 0 so cards return to upright.
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => { lean = 0; schedule(); }, 140);
+  }
+
+  strip.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', schedule);
 
   if (pointerFine && !reduceMotion) {
