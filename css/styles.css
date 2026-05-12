@@ -107,7 +107,9 @@
   .projects-section { position: relative; padding-top: 4.5rem; perspective: 1400px; }
   .projects-strip {
     display: flex; gap: 0.35rem;
-    padding: 0.5rem 2.5rem 3rem;
+    /* Generous bottom padding absorbs the downward growth of the
+       focal card when it scales up; top stays tight. */
+    padding: 0.5rem 2.5rem 6rem;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none; -ms-overflow-style: none;
@@ -176,6 +178,10 @@
       rotateY(calc(var(--tilt-y) + var(--card-bend)))
       rotateZ(var(--card-lean))
       scale(var(--card-scale));
+    /* Anchor scaling at the top so the focal card grows downward
+       only — overflow-x: auto on the strip clips top overflow,
+       which was cutting the scaled card. */
+    transform-origin: 50% 0%;
     transition: transform 0.4s var(--ease-out);
     will-change: transform;
   }
