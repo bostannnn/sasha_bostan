@@ -456,7 +456,8 @@ function initDragScroll() {
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let down = false, startX, startScrollLeft;
-  let lastX = 0, lastT = 0, velocity = 0;
+  // velocity is in scrollLeft-px/ms — signed, so sign carries direction.
+  let lastT = 0, velocity = 0;
   let inertiaRaf = 0;
 
   function stopInertia() {
@@ -466,15 +467,16 @@ function initDragScroll() {
   }
 
   function startInertia() {
-    if (reduceMotion || Math.abs(velocity) < 0.02) return;
+    if (reduceMotion || Math.abs(velocity) < 0.005) return;
     let last = performance.now();
     const tick = now => {
       const dt = Math.min(now - last, 32);
       last = now;
-      el.scrollLeft -= velocity * dt;
-      // Exponential decay; ~0.94 per 16ms frame feels like a slick trackpad fling.
-      velocity *= Math.pow(0.94, dt / 16);
-      if (Math.abs(velocity) > 0.02) {
+      el.scrollLeft += velocity * dt;
+      // Slower decay → longer glide. 0.965 per 16ms ≈ ~1.5–2s of motion
+      // from a vigorous fling, instead of ~0.6s before.
+      velocity *= Math.pow(0.965, dt / 16);
+      if (Math.abs(velocity) > 0.005) {
         inertiaRaf = requestAnimationFrame(tick);
       } else {
         inertiaRaf = 0;
@@ -490,7 +492,6 @@ function initDragScroll() {
     el.classList.add('is-dragging');
     startX = e.pageX;
     startScrollLeft = el.scrollLeft;
-    lastX = e.pageX;
     lastT = performance.now();
     velocity = 0;
   });
@@ -498,13 +499,13 @@ function initDragScroll() {
     if (!down) return;
     e.preventDefault();
     const now = performance.now();
-    const dx = e.pageX - lastX;
     const dt = Math.max(now - lastT, 1);
-    // Velocity in px/ms — same units inertia consumes below.
-    velocity = dx / dt;
-    lastX = e.pageX;
-    lastT = now;
+    const prevScrollLeft = el.scrollLeft;
     el.scrollLeft = startScrollLeft - (e.pageX - startX) * 1.4;
+    // Track actual scroll delta so the inertia inherits the 1.4× drag
+    // multiplier and the correct direction automatically.
+    velocity = (el.scrollLeft - prevScrollLeft) / dt;
+    lastT = now;
   });
   const release = () => {
     if (!down) return;
@@ -514,8 +515,6 @@ function initDragScroll() {
   };
   el.addEventListener('mouseup', release);
   el.addEventListener('mouseleave', release);
-  // If the user starts a wheel/touch scroll, kill any running inertia
-  // so we don't fight native momentum.
   el.addEventListener('wheel', stopInertia, { passive: true });
   el.addEventListener('touchstart', stopInertia, { passive: true });
 }
@@ -531,6 +530,7 @@ function initStripProgress() {
 
   const cards = [...strip.querySelectorAll('.project-card')];
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pointerFine = matchMedia('(pointer: fine)').matches;
 
   // Scroll velocity tracking — drives the "lean" effect.
   let lastScrollLeft = strip.scrollLeft;
@@ -540,6 +540,9 @@ function initStripProgress() {
   let scrolling = false;
   let scrollSettleTimer = 0;
   let rafId = 0;
+  // Pointer X in scroll-content space. When non-null, the focal card
+  // (scale-up + bend-pivot) follows the cursor instead of strip center.
+  let pointerX = null;
 
   function update() {
     rafId = 0;
@@ -559,14 +562,17 @@ function initStripProgress() {
     // Clamp lean to a tasteful range (max ±2deg).
     const leanDeg = Math.max(-2, Math.min(2, lean * -0.6));
 
+    // Focal X: the cursor (when it's hovering the strip) or the strip
+    // center otherwise. The closest card to focusX becomes "the main".
     const stripCenter = strip.scrollLeft + strip.clientWidth / 2;
+    const focusX = pointerX !== null ? pointerX : stripCenter;
     const reach = strip.clientWidth * 0.5; // distance over which bend/scale fade out
     let bestIdx = 0;
     let bestDist = Infinity;
 
     cards.forEach((card, i) => {
       const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const dist = cardCenter - stripCenter;
+      const dist = cardCenter - focusX;
       const absDist = Math.abs(dist);
       if (absDist < bestDist) { bestDist = absDist; bestIdx = i; }
 
@@ -579,10 +585,10 @@ function initStripProgress() {
       // Normalised distance: 0 at center, 1 at edge of reach (clamped).
       const t = Math.min(absDist / reach, 1);
       const signed = Math.max(-1, Math.min(1, dist / reach));
-      // Scale: 1.08 at center → 1.0 at edge (ease-out).
-      const scale = 1 + 0.08 * (1 - t) * (1 - t);
-      // Bend: rotateY proportional to signed clamped distance, ±14deg max.
-      const bend = signed * 14;
+      // Scale: 1.14 at the focal card → 1.0 at edge (ease-out).
+      const scale = 1 + 0.14 * (1 - t) * (1 - t);
+      // Bend: rotateY proportional to signed clamped distance, ±16deg max.
+      const bend = signed * 16;
       card.style.setProperty('--card-scale', scale.toFixed(4));
       card.style.setProperty('--card-bend', `${bend.toFixed(2)}deg`);
       card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
@@ -592,8 +598,9 @@ function initStripProgress() {
       activeIndex = bestIdx;
       current.textContent = String(activeIndex + 1).padStart(2, '0');
       cards.forEach((card, i) => card.classList.toggle('is-active', i === activeIndex));
-      // Subtle haptic on the centered card change. Android only; iOS/desktop no-op.
-      if (!reduceMotion && Math.abs(instantVelocity) < 1.5) navigator.vibrate?.(6);
+      // Haptic only on touch devices — mouse-driven focus changes would
+      // buzz every time the user moved their cursor across a card.
+      if (!reduceMotion && !pointerFine) navigator.vibrate?.(6);
     }
   }
 
@@ -620,5 +627,22 @@ function initStripProgress() {
 
   strip.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', schedule);
+
+  // Mouse-driven focus: only on devices with a fine pointer (mouse / trackpad).
+  // During a drag the cursor is following a moving viewport, so we freeze
+  // tracking and let strip-center take over until the drag releases.
+  if (pointerFine && !reduceMotion) {
+    strip.addEventListener('mousemove', e => {
+      if (strip.classList.contains('is-dragging')) return;
+      const rect = strip.getBoundingClientRect();
+      pointerX = e.clientX - rect.left + strip.scrollLeft;
+      schedule();
+    });
+    strip.addEventListener('mouseleave', () => {
+      pointerX = null;
+      schedule();
+    });
+  }
+
   update();
 }
