@@ -153,7 +153,7 @@
     z-index: 3;
     display: grid;
     grid-template-columns: auto minmax(180px, min(52vw, 680px)) auto;
-    align-items: center;
+    align-items: end;
     justify-content: center;
     gap: 1.35rem;
     padding: 0 clamp(1.25rem, 3.4vw, 2.5rem);
@@ -173,17 +173,12 @@
     position: relative;
     display: flex;
     align-items: flex-end;
-    gap: clamp(0.28rem, 0.64vw, 0.56rem);
+    justify-content: space-between;
+    gap: 0;
     width: 100%;
     min-width: 0;
     height: 2.15rem;
     overflow: hidden;
-    background:
-      repeating-linear-gradient(
-        to right,
-        rgba(32,32,26,0.24) 0 2px,
-        transparent 2px 14px
-      ) left bottom / 100% 0.8rem no-repeat;
   }
   .strip-progress-mark {
     position: relative;
@@ -976,7 +971,11 @@
       letter-spacing: 0.07em;
       white-space: nowrap;
     }
-    .projects-section { padding-top: calc(var(--nav-height) + var(--projects-rhythm)); }
+    .projects-section {
+      min-height: 0;
+      padding-top: calc(var(--nav-height) + var(--projects-rhythm));
+      padding-bottom: 3rem;
+    }
     .projects-strip { padding: var(--projects-rhythm) 1.25rem 1.75rem; gap: 0.3rem; }
     /* Softer focal effect on mobile — larger scales read as
        layout pressure rather than visual emphasis. */
@@ -993,7 +992,8 @@
     .strip-progress {
       grid-template-columns: auto minmax(150px, 1fr) auto;
       gap: 0.85rem;
-      top: min(calc(var(--nav-height) + 50px + min(108vw, 56svh) + 8.65rem), calc(100svh - 4.25rem));
+      top: auto;
+      bottom: 0.75rem;
       padding: 0 1.25rem;
     }
     .strip-progress-rail {
