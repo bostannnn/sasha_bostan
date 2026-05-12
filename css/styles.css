@@ -111,6 +111,11 @@
        focal card when it scales up; top stays tight. */
     padding: 0.5rem 2.5rem 6rem;
     overflow-x: auto;
+    overflow-y: hidden;
+    /* Lock touch gestures to horizontal panning so iOS doesn't rubber-band
+       the strip vertically when the user drags. */
+    touch-action: pan-x;
+    overscroll-behavior-y: none;
     scroll-snap-type: x proximity;
     scrollbar-width: none; -ms-overflow-style: none;
     cursor: grab; align-items: flex-start;
@@ -170,14 +175,19 @@
        overwriting the whole transform. Stays at neutral when JS is off. */
     --tilt-x: 0deg;
     --tilt-y: 0deg;
-    --card-scale: 1;
-    --card-bend: 0deg;
+    /* Raw inputs from JS: 0..1 focus (1 at focal card, 0 at edges)
+       and -1..1 signed normalized distance for bend direction. */
+    --card-focus: 0;
+    --card-bend-signed: 0;
     --card-lean: 0deg;
+    /* Amplitudes — tune per breakpoint without touching JS. */
+    --scale-amp: 0.14;
+    --bend-amp: 16deg;
     transform:
       rotateX(var(--tilt-x))
-      rotateY(calc(var(--tilt-y) + var(--card-bend)))
+      rotateY(calc(var(--tilt-y) + var(--card-bend-signed) * var(--bend-amp)))
       rotateZ(var(--card-lean))
-      scale(var(--card-scale));
+      scale(calc(1 + var(--card-focus) * var(--scale-amp)));
     /* Anchor scaling at the top so the focal card grows downward
        only — overflow-x: auto on the strip clips top overflow,
        which was cutting the scaled card. */
@@ -843,7 +853,10 @@
   @media (max-width: 640px) {
     nav { padding: 1rem 1.25rem; }
     .nav-role { display: none; }
-    .projects-strip { padding: 0.75rem 1.25rem 2.5rem; gap: 0.3rem; }
+    .projects-strip { padding: 0.75rem 1.25rem 5.5rem; gap: 0.3rem; }
+    /* Softer focal effect on mobile — small screens read 1.14× as
+       layout pressure rather than visual emphasis. */
+    .project-card { --scale-amp: 0.06; --bend-amp: 10deg; }
     /* 72vw wide card, 108vw tall = portrait ~3:2 — stays tall, not square */
     .project-card { width: 72vw; }
     .project-card { padding: 1.4rem 1.6rem 0; }

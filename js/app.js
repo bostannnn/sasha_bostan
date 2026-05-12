@@ -520,66 +520,22 @@ function initDragScroll() {
   el.addEventListener('touchstart', stopInertia, { passive: true });
 }
 
-// Wheel-driven smooth glide for trackpad horizontal swipes AND vertical
-// mouse wheel — both feed into a single target-following rAF loop so the
-// strip glides past the wheel/swipe end instead of stopping dead.
+// Convert pure-vertical mouse-wheel scrolling into horizontal strip
+// scrolling. Trackpad horizontal swipes (which carry deltaX, possibly
+// with deltaY too) are LEFT ALONE so the browser/OS momentum scrolls
+// the strip natively — that curve is much smoother than anything we
+// can roll by hand without a heavy library.
 function initWheelGlide() {
   const el = document.getElementById('strip');
   if (!el) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  let target = el.scrollLeft;
-  let raf = 0;
-  let last = 0;
-  let active = false;
-
-  function tick(now) {
-    const dt = Math.min(now - last, 32);
-    last = now;
-    const diff = target - el.scrollLeft;
-    if (Math.abs(diff) < 0.5) {
-      el.scrollLeft = target;
-      raf = 0;
-      active = false;
-      return;
-    }
-    // Slow lerp (~9%/frame) — closes the gap geometrically over ~0.8s,
-    // smoothing wheel-event bursts and giving a long-tail glide.
-    el.scrollLeft += diff * Math.min(0.09 * (dt / 16), 0.3);
-    raf = requestAnimationFrame(tick);
-  }
-
   el.addEventListener('wheel', e => {
-    const ax = Math.abs(e.deltaX);
-    const ay = Math.abs(e.deltaY);
-    const delta = ax > ay ? e.deltaX : e.deltaY;
-    if (Math.abs(delta) < 0.5) return;
+    // If the event already has horizontal delta, let native scroll handle it.
+    if (e.deltaX !== 0) return;
+    if (e.deltaY === 0) return;
+    // Pure-vertical wheel (mouse wheel, or trackpad with shift): map to horizontal.
     e.preventDefault();
-    if (!active) {
-      target = el.scrollLeft;
-      active = true;
-    }
-    // OS momentum is already baked into trackpad wheel events — gain just
-    // bridges between event delta units and scroll px. 0.7 lets the OS
-    // curve dominate instead of doubling it.
-    target += delta * 0.7;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    if (target < 0) target = 0;
-    else if (target > maxScroll) target = maxScroll;
-    if (!raf) {
-      last = performance.now();
-      raf = requestAnimationFrame(tick);
-    }
+    el.scrollLeft += e.deltaY;
   }, { passive: false });
-
-  // If the user starts dragging or touching, give up the wheel target so
-  // drag/touch input controls scrollLeft directly without fighting.
-  const surrender = () => {
-    active = false;
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-  };
-  el.addEventListener('mousedown', surrender);
-  el.addEventListener('touchstart', surrender, { passive: true });
 }
 
 function initStripProgress() {
@@ -640,20 +596,20 @@ function initStripProgress() {
       if (absDist < bestDist) { bestDist = absDist; bestIdx = i; }
 
       if (reduceMotion) {
-        card.style.setProperty('--card-scale', '1');
-        card.style.setProperty('--card-bend', '0deg');
+        card.style.setProperty('--card-focus', '0');
+        card.style.setProperty('--card-bend-signed', '0');
         card.style.setProperty('--card-lean', '0deg');
         return;
       }
       // Normalised distance: 0 at center, 1 at edge of reach (clamped).
       const t = Math.min(absDist / reach, 1);
       const signed = Math.max(-1, Math.min(1, dist / reach));
-      // Scale: 1.14 at the focal card → 1.0 at edge (ease-out).
-      const scale = 1 + 0.14 * (1 - t) * (1 - t);
-      // Bend: rotateY proportional to signed clamped distance, ±16deg max.
-      const bend = signed * 16;
-      card.style.setProperty('--card-scale', scale.toFixed(4));
-      card.style.setProperty('--card-bend', `${bend.toFixed(2)}deg`);
+      // Focus factor 0..1: 1 at center, 0 at edge (ease-out). CSS multiplies
+      // this by --scale-amp / --bend-amp so the same JS works on desktop
+      // and mobile with different amplitudes via media query.
+      const focus = (1 - t) * (1 - t);
+      card.style.setProperty('--card-focus', focus.toFixed(4));
+      card.style.setProperty('--card-bend-signed', signed.toFixed(4));
       card.style.setProperty('--card-lean', `${leanDeg.toFixed(2)}deg`);
     });
 
