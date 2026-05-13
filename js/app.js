@@ -404,6 +404,8 @@ function initCoverVideos() {
   const videos = document.querySelectorAll('.project-thumb video');
   if (!videos.length) return;
 
+  videos.forEach(addPosterFallback);
+
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     videos.forEach(video => video.pause());
     return;
@@ -412,6 +414,9 @@ function initCoverVideos() {
   videos.forEach(video => {
     video.muted = true;
     video.playsInline = true;
+    video.addEventListener('playing', () => {
+      video.classList.add('is-video-ready');
+    });
   });
 
   const observer = new IntersectionObserver(entries => {
@@ -426,6 +431,18 @@ function initCoverVideos() {
   }, { rootMargin: '0px', threshold: 0.25 });
 
   videos.forEach(video => observer.observe(video));
+}
+
+function addPosterFallback(video) {
+  if (!video.poster || video.previousElementSibling?.classList.contains('video-poster-fallback')) return;
+
+  const poster = document.createElement('img');
+  poster.className = 'video-poster-fallback';
+  poster.src = video.poster;
+  poster.alt = '';
+  poster.decoding = 'async';
+  poster.loading = 'eager';
+  video.parentNode.insertBefore(poster, video);
 }
 
 // ── 5. BADGE SWAY — smooth JS sine, lerp on hover/leave ──────

@@ -336,11 +336,25 @@
     transition: transform 0.8s var(--ease-out), filter 0.4s;
     filter: saturate(0.85) brightness(0.97);
   }
-  .project-thumb video { background: var(--bg-card); }
+  .project-thumb .video-poster-fallback,
+  .project-thumb video {
+    position: absolute;
+    inset: 0;
+  }
+  .project-thumb .video-poster-fallback {
+    z-index: 1;
+  }
+  .project-thumb video {
+    z-index: 2;
+    opacity: 0;
+    background: var(--bg-card);
+  }
+  .project-thumb video.is-video-ready { opacity: 1; }
   .project-card:hover .project-thumb img,
   .project-card:hover .project-thumb video { transform: scale(1.05); filter: saturate(1) brightness(1); }
   .thumb-overlay {
     position: absolute; inset: 0;
+    z-index: 3;
     background: linear-gradient(to top, rgba(28,36,22,0.7) 0%, rgba(28,36,22,0.1) 50%, transparent 70%);
     display: flex; flex-direction: column; justify-content: flex-end;
     padding: 1.5rem; opacity: 0; transition: opacity 0.35s;
