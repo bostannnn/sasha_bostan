@@ -24,12 +24,16 @@ window.PROJECTS = [
     id: 'project-2',
     title: 'Ого-го-облако',
     year: '2024',
-    images: [],
+    images: [
+      'assets/project_2/image_1.png',
+      'assets/project_2/image_2.png',
+      'assets/project_2/image_3.png',
+      'assets/project_2/image_4.png',
+    ],
     video: null,
     videos: [
       'assets/project_2/video_1.mp4',
       'assets/project_2/video_2.mp4',
-      'assets/project_2/video_3.mp4',
       'assets/project_2/video_4.mp4',
     ],
     goal: 'Нестандартно рассказать о безлимитной автозагрузке для фото и видео в Облаке Mail.',
